@@ -1,0 +1,263 @@
+# Intent Resolution Configuration
+# Maps user monitoring intents to analytical signals
+# NO dataset references - only signals and capabilities
+
+version: "1.0"
+last_updated: "2026-01-15"
+
+# =============================================================================
+# MONITORING INTENTS
+# User-facing intent options that map to analytical signals
+# =============================================================================
+
+intents:
+  
+  # Intent: Check enrollment operations
+  check_enrollments:
+    display_name: "Check today's enrollment operations for issues"
+    category: "enrollment_monitoring"
+    description: "Monitor new Aadhaar enrollment activities"
+    signals_required:
+      - volume_patterns
+      - geographic_distribution
+      - temporal_patterns
+      - operator_activity
+    analysis_scope:
+      - new_registrations
+      - enrollment_volume
+      - center_activity
+    default_vigilance: "standard"
+    priority: 1
+
+  # Intent: Review update requests
+  review_updates:
+    display_name: "Review update requests for irregularities"
+    category: "update_monitoring"
+    description: "Monitor demographic and address update patterns"
+    signals_required:
+      - update_frequency
+      - demographic_changes
+      - repeat_update_patterns
+      - address_change_velocity
+    analysis_scope:
+      - demographic_updates
+      - address_changes
+      - field_modifications
+    default_vigilance: "standard"
+    priority: 2
+
+  # Intent: Verify biometric submissions
+  verify_biometrics:
+    display_name: "Verify biometric submissions for anomalies"
+    category: "biometric_monitoring"
+    description: "Monitor biometric update and verification patterns"
+    signals_required:
+      - biometric_update_frequency
+      - multi_device_submissions
+      - rejection_patterns
+      - quality_metrics
+    analysis_scope:
+      - fingerprint_updates
+      - iris_updates
+      - photo_updates
+    default_vigilance: "enhanced"
+    priority: 1
+
+  # Intent: Comprehensive integrity check
+  comprehensive_check:
+    display_name: "Run comprehensive integrity check (all operations)"
+    category: "full_audit"
+    description: "Complete system-wide integrity assessment"
+    signals_required:
+      - volume_patterns
+      - geographic_distribution
+      - temporal_patterns
+      - operator_activity
+      - update_frequency
+      - demographic_changes
+      - biometric_update_frequency
+      - cross_operation_correlation
+    analysis_scope:
+      - all_operations
+    default_vigilance: "enhanced"
+    priority: 1
+
+# =============================================================================
+# SIGNAL DEFINITIONS
+# Define what each signal means and how it's computed (abstracted)
+# =============================================================================
+
+signals:
+  
+  volume_patterns:
+    description: "Unusual volume of operations at a center or region"
+    indicators:
+      - daily_volume_deviation
+      - hourly_peaks
+      - weekend_activity
+    severity_weight: 0.8
+
+  geographic_distribution:
+    description: "Geographic clustering or dispersion patterns"
+    indicators:
+      - regional_concentration
+      - cross_district_activity
+      - remote_area_patterns
+    severity_weight: 0.7
+
+  temporal_patterns:
+    description: "Time-based patterns indicating potential issues"
+    indicators:
+      - after_hours_activity
+      - holiday_operations
+      - end_of_month_spikes
+    severity_weight: 0.6
+
+  operator_activity:
+    description: "Individual operator workload and patterns"
+    indicators:
+      - operator_volume
+      - speed_anomalies
+      - device_patterns
+    severity_weight: 0.9
+
+  update_frequency:
+    description: "Frequency of updates on records"
+    indicators:
+      - repeat_updates
+      - rapid_succession
+      - historical_pattern_change
+    severity_weight: 0.7
+
+  demographic_changes:
+    description: "Nature and extent of demographic modifications"
+    indicators:
+      - field_change_patterns
+      - multi_field_updates
+      - sensitive_field_changes
+    severity_weight: 0.8
+
+  repeat_update_patterns:
+    description: "Patterns of repeated updates on same records"
+    indicators:
+      - same_record_frequency
+      - short_interval_updates
+    severity_weight: 0.9
+
+  address_change_velocity:
+    description: "Speed and pattern of address changes"
+    indicators:
+      - address_change_count
+      - geographic_movement_pattern
+    severity_weight: 0.7
+
+  biometric_update_frequency:
+    description: "Frequency of biometric data modifications"
+    indicators:
+      - fingerprint_change_rate
+      - iris_update_frequency
+      - photo_update_patterns
+    severity_weight: 0.95
+
+  multi_device_submissions:
+    description: "Submissions from multiple devices for same record"
+    indicators:
+      - device_diversity
+      - concurrent_submissions
+    severity_weight: 0.9
+
+  rejection_patterns:
+    description: "Patterns in rejected submissions"
+    indicators:
+      - rejection_rate
+      - retry_patterns
+      - eventual_success_rate
+    severity_weight: 0.6
+
+  quality_metrics:
+    description: "Quality indicators of submitted data"
+    indicators:
+      - image_quality_scores
+      - completeness_metrics
+    severity_weight: 0.5
+
+  cross_operation_correlation:
+    description: "Correlations across different operation types"
+    indicators:
+      - enrollment_update_correlation
+      - demographic_biometric_correlation
+    severity_weight: 0.8
+
+# =============================================================================
+# VIGILANCE LEVELS
+# Maps user-friendly vigilance to internal processing parameters
+# =============================================================================
+
+vigilance_levels:
+  
+  routine:
+    display_name: "Routine"
+    description: "Quick check for obvious concerns"
+    sensitivity: "low"
+    processing_depth: "shallow"
+    flag_threshold_modifier: 1.3
+    
+  standard:
+    display_name: "Standard"
+    description: "Balanced monitoring for normal operations"
+    sensitivity: "medium"
+    processing_depth: "normal"
+    flag_threshold_modifier: 1.0
+    
+  enhanced:
+    display_name: "Enhanced"
+    description: "Thorough review for sensitive periods"
+    sensitivity: "high"
+    processing_depth: "deep"
+    flag_threshold_modifier: 0.8
+    
+  maximum:
+    display_name: "Maximum"
+    description: "Complete scrutiny for special circumstances"
+    sensitivity: "maximum"
+    processing_depth: "exhaustive"
+    flag_threshold_modifier: 0.6
+
+# =============================================================================
+# CONTEXT MODIFIERS
+# How context inputs modify the analysis
+# =============================================================================
+
+context_modifiers:
+
+  location:
+    type: "geographic_filter"
+    options:
+      - all_india
+      - state
+      - district
+      - center
+    affects:
+      - geographic_distribution
+      - regional_concentration
+
+  time_period:
+    type: "temporal_filter"
+    options:
+      - today
+      - last_7_days
+      - this_month
+      - custom_range
+    affects:
+      - temporal_patterns
+      - volume_patterns
+
+  special_flags:
+    type: "modifier"
+    options:
+      - new_center_monitoring
+      - operator_audit
+      - regional_drive
+    affects:
+      - operator_activity
+      - volume_patterns
