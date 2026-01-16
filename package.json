@@ -1,0 +1,38 @@
+{
+  "name": "uidai-analytics-dashboard",
+  "version": "1.0.0",
+  "description": "UIDAI Analytics Dashboard - Aadhaar Data Intelligence Platform with Geographic Hotspot Detection",
+  "main": "src/server/index.js",
+  "scripts": {
+    "start": "node src/server/index.js",
+    "dev": "nodemon src/server/index.js",
+    "test": "jest",
+    "lint": "eslint src/"
+  },
+  "keywords": [
+    "uidai",
+    "aadhaar",
+    "analytics",
+    "geospatial",
+    "dashboard",
+    "hackathon"
+  ],
+  "author": "UIDAI Data Hackathon 2026",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "csv-writer": "^1.6.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "helmet": "^7.1.0",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
