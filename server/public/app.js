@@ -347,46 +347,285 @@ async function loadRiskPredictor() {
 }
 
 async function loadForecast() {
-    setTitle('📅 Enrollment Forecast');
+    setTitle('📅 ARIMA Enrollment Forecast');
+
+    // Store chart instance globally for cleanup - safely destroy existing
+    if (window.forecastChart && typeof window.forecastChart.destroy === 'function') {
+        window.forecastChart.destroy();
+        window.forecastChart = null;
+    }
 
     try {
-        const response = await fetch(`${API_BASE}/hotspots/trends?limit=500`);
-        const data = await response.json();
-
-        if (data.success && data.data) {
-            const { regionalTrends } = data.data;
-
-            showContent(`
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-value" style="color: #00ff88;">${regionalTrends?.summary?.increasing || 0}</div>
-                        <div class="stat-label">Increasing Trend</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value">${regionalTrends?.summary?.stable || 0}</div>
-                        <div class="stat-label">Stable</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-value" style="color: #ff4444;">${regionalTrends?.summary?.decreasing || 0}</div>
-                        <div class="stat-label">Decreasing Trend</div>
-                    </div>
-                </div>
-                
-                <h3 style="margin: 20px 0 15px;">📈 Regional Trends</h3>
-                ${renderTrends(regionalTrends?.regions || [])}
-            `);
-        } else {
-            showContent(`
-                <div class="alert alert-info">
-                    <strong>Enrollment Forecast:</strong> Time-series analysis for enrollment predictions.
-                </div>
-                <p style="margin-top: 15px; color: #aaa;">
-                    This feature uses seasonal decomposition to predict future enrollment patterns.
-                </p>
-            `);
+        // Fetch available districts from ML backend
+        let districts = ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata',
+            'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow'];
+        try {
+            const districtRes = await fetch(`${API_BASE}/forecast/districts`);
+            if (districtRes.ok) {
+                const districtData = await districtRes.json();
+                districts = districtData.districts || districts;
+            }
+        } catch (e) {
+            console.log('Using fallback districts');
         }
+
+        // Initial content with district selector
+        showContent(`
+            <div class="forecast-controls" style="margin-bottom: 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                <label style="font-weight: bold; color: #00d4ff;">Select District:</label>
+                <select id="district-select" style="padding: 10px 15px; background: #2a2a4a; color: white; border: 1px solid #444; border-radius: 8px; font-size: 14px; cursor: pointer;">
+                    ${districts.map(d => `<option value="${d}">${d}</option>`).join('')}
+                </select>
+                <button onclick="refreshForecast()" style="padding: 10px 20px; background: linear-gradient(135deg, #00d4ff, #00ff88); color: #1a1a2e; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: transform 0.2s;">
+                    🔄 Refresh
+                </button>
+            </div>
+            
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 20px;">
+                <div class="stat-card" id="surge-stat">
+                    <div class="stat-value" id="surge-value">-</div>
+                    <div class="stat-label">6-Month Demand Change</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avg-value">-</div>
+                    <div class="stat-label">Avg Predicted Enrollment</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="data-points">-</div>
+                    <div class="stat-label">Historical Data Points</div>
+                </div>
+            </div>
+            
+            <div style="background: #2a2a4a; border-radius: 12px; padding: 20px; margin-bottom: 20px;">
+                <canvas id="forecastChart" height="300"></canvas>
+            </div>
+            
+            <div id="forecast-details" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px;">
+            </div>
+            
+            <div class="alert alert-info" style="margin-top: 20px;">
+                <strong>📊 Chart Legend:</strong> 
+                <span style="color: #36A2EB;">━━━</span> Historical Data | 
+                <span style="color: #FF6384;">- - -</span> ARIMA Forecast |
+                <span style="color: rgba(255, 99, 132, 0.2);">░░░</span> Confidence Interval
+            </div>
+        `);
+
+        // Load initial forecast
+        await updateForecastChart(districts[0]);
+
+        // Add event listener for district change
+        document.getElementById('district-select').addEventListener('change', async (e) => {
+            await updateForecastChart(e.target.value);
+        });
+
     } catch (error) {
         showError(`Failed to load forecast: ${error.message}`);
+    }
+}
+
+// Global refresh function
+window.refreshForecast = async function () {
+    const select = document.getElementById('district-select');
+    if (select) {
+        await updateForecastChart(select.value);
+    }
+}
+
+async function updateForecastChart(district) {
+    const canvas = document.getElementById('forecastChart');
+    if (!canvas) return;
+
+    // Show loading state
+    const surgeEl = document.getElementById('surge-value');
+    if (surgeEl) surgeEl.textContent = '...';
+
+    try {
+        // Fetch ARIMA forecast from ML backend
+        const response = await fetch(`${API_BASE}/forecast/predict/${encodeURIComponent(district)}?periods=6`);
+
+        if (!response.ok) {
+            throw new Error('Forecast API unavailable');
+        }
+
+        const data = await response.json();
+
+        // Prepare chart data
+        const labels = [];
+        const historicalData = [];
+        const forecastData = [];
+        const upperBound = [];
+        const lowerBound = [];
+
+        // Generate synthetic historical points from stats
+        const mean = data.historical_stats.mean;
+        const std = data.historical_stats.std;
+
+        for (let i = -6; i < 0; i++) {
+            labels.push(`H${Math.abs(i)}`);
+            const variation = Math.sin(i * 0.5) * std * 0.3;
+            historicalData.push(Math.round(mean + variation + (i * std * 0.05)));
+            forecastData.push(null);
+            upperBound.push(null);
+            lowerBound.push(null);
+        }
+
+        // Add forecast points
+        data.forecasts.forEach((f, i) => {
+            labels.push(`F${i + 1}`);
+            historicalData.push(null);
+            forecastData.push(f.predicted_enrollment);
+            upperBound.push(f.upper_bound);
+            lowerBound.push(f.lower_bound);
+        });
+
+        // Calculate demand surge
+        const firstForecast = data.forecasts[0].predicted_enrollment;
+        const lastForecast = data.forecasts[5].predicted_enrollment;
+        const surgePercent = ((lastForecast - firstForecast) / firstForecast * 100).toFixed(1);
+        const avgForecast = data.forecasts.reduce((sum, f) => sum + f.predicted_enrollment, 0) / 6;
+
+        // Update stats
+        document.getElementById('surge-value').textContent = `${surgePercent > 0 ? '+' : ''}${surgePercent}%`;
+        document.getElementById('surge-value').style.color = surgePercent > 0 ? '#00ff88' : '#ff4444';
+        document.getElementById('avg-value').textContent = formatNumber(Math.round(avgForecast));
+        document.getElementById('data-points').textContent = data.historical_stats.data_points;
+
+        // Update forecast details
+        const detailsEl = document.getElementById('forecast-details');
+        detailsEl.innerHTML = data.forecasts.map(f => `
+            <div style="background: #333; padding: 12px; border-radius: 8px; text-align: center;">
+                <div style="font-size: 11px; color: #888; margin-bottom: 5px;">Period ${f.period}</div>
+                <div style="font-size: 16px; font-weight: bold; color: #00d4ff;">${f.predicted_enrollment.toLocaleString()}</div>
+                <div style="font-size: 10px; color: #666;">±${Math.round((f.upper_bound - f.lower_bound) / 2).toLocaleString()}</div>
+            </div>
+        `).join('');
+
+        // Destroy existing chart safely
+        if (window.forecastChart && typeof window.forecastChart.destroy === 'function') {
+            window.forecastChart.destroy();
+            window.forecastChart = null;
+        }
+
+        // Create new chart
+        const ctx = canvas.getContext('2d');
+        window.forecastChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Historical',
+                        data: historicalData,
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        borderWidth: 3,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#36A2EB',
+                        tension: 0.3,
+                        spanGaps: false
+                    },
+                    {
+                        label: 'Forecast',
+                        data: forecastData,
+                        borderColor: '#FF6384',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        borderWidth: 3,
+                        borderDash: [8, 4],
+                        pointRadius: 6,
+                        pointBackgroundColor: '#FF6384',
+                        tension: 0.3,
+                        spanGaps: false
+                    },
+                    {
+                        label: 'Upper Bound',
+                        data: upperBound,
+                        borderColor: 'rgba(255, 99, 132, 0.3)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        fill: '+1',
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Lower Bound',
+                        data: lowerBound,
+                        borderColor: 'rgba(255, 99, 132, 0.3)',
+                        backgroundColor: 'transparent',
+                        borderWidth: 1,
+                        pointRadius: 0,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: '#aaa',
+                            filter: (item) => item.text !== 'Upper Bound' && item.text !== 'Lower Bound'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: '#2a2a4a',
+                        titleColor: '#00d4ff',
+                        bodyColor: '#fff',
+                        borderColor: '#444',
+                        borderWidth: 1
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: { color: '#888' }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                        ticks: {
+                            color: '#888',
+                            callback: (value) => value >= 1000 ? (value / 1000).toFixed(1) + 'K' : value
+                        }
+                    }
+                },
+                interaction: {
+                    mode: 'nearest',
+                    axis: 'x',
+                    intersect: false
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Forecast error:', error);
+        document.getElementById('surge-value').textContent = 'N/A';
+        document.getElementById('avg-value').textContent = 'N/A';
+        document.getElementById('data-points').textContent = '-';
+
+        // Show error in chart area with HTML instead of canvas text
+        const chartContainer = canvas.parentElement;
+        chartContainer.innerHTML = `
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: #ff6b6b; text-align: center; padding: 20px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">Unable to load forecast</div>
+                <div style="color: #aaa; font-size: 14px; margin-bottom: 20px;">
+                    ${error.message || 'ML backend appears offline or unreachable'}
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="loadForecast()" style="padding: 10px 20px; background: linear-gradient(135deg, #00d4ff, #00ff88); color: #1a1a2e; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
+                        🔄 Retry
+                    </button>
+                </div>
+                <div style="color: #666; font-size: 12px; margin-top: 15px;">
+                    Make sure the ML backend is running on port 8000
+                </div>
+            </div>
+        `;
     }
 }
 

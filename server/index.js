@@ -71,6 +71,101 @@ app.use('/api/ml', async (req, res) => {
   }
 });
 
+// Forecast API Proxy - Forward requests to ML backend forecast endpoints
+app.get('/api/forecast/districts', async (req, res) => {
+  try {
+    const response = await axios.get(`${ML_BACKEND_URL}/api/forecast/districts`);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Forecast districts error:', error.message);
+    res.status(503).json({
+      count: 10,
+      districts: ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow']
+    });
+  }
+});
+
+app.get('/api/forecast/predict/:district', async (req, res) => {
+  try {
+    const { district } = req.params;
+    const periods = req.query.periods || 6;
+    const response = await axios.get(
+      `${ML_BACKEND_URL}/api/forecast/predict/${encodeURIComponent(district)}?periods=${periods}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error('Forecast predict error:', error.message);
+    res.status(503).json({ error: 'ML Backend unavailable', message: error.message });
+  }
+});
+
+app.post('/api/forecast/train', async (req, res) => {
+  try {
+    const limit = req.query.limit || 500;
+    const maxDistricts = req.query.max_districts || 30;
+    const response = await axios.post(
+      `${ML_BACKEND_URL}/api/forecast/train?limit=${limit}&max_districts=${maxDistricts}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error('Forecast train error:', error.message);
+    res.status(503).json({ error: 'ML Backend unavailable', message: error.message });
+  }
+});
+
+// State-Level Forecast Endpoints
+app.get('/api/forecast/states', async (req, res) => {
+  try {
+    const response = await axios.get(`${ML_BACKEND_URL}/api/forecast/states`);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Forecast states error:', error.message);
+    res.status(503).json({ count: 0, states: [] });
+  }
+});
+
+app.get('/api/forecast/predict-all-states', async (req, res) => {
+  try {
+    const periods = req.query.periods || 6;
+    const confidence = req.query.confidence || 0.95;
+    const response = await axios.get(
+      `${ML_BACKEND_URL}/api/forecast/predict-all-states?periods=${periods}&confidence=${confidence}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error('Forecast predict states error:', error.message);
+    res.status(503).json({ error: 'ML Backend unavailable', message: error.message });
+  }
+});
+
+app.post('/api/forecast/train/states', async (req, res) => {
+  try {
+    const limit = req.query.limit || 1000;
+    const response = await axios.post(
+      `${ML_BACKEND_URL}/api/forecast/train/states?limit=${limit}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error('Forecast train states error:', error.message);
+    res.status(503).json({ error: 'ML Backend unavailable', message: error.message });
+  }
+});
+
+app.get('/api/forecast/predict/state/:state', async (req, res) => {
+  try {
+    const { state } = req.params;
+    const periods = req.query.periods || 6;
+    const confidence = req.query.confidence || 0.95;
+    const response = await axios.get(
+      `${ML_BACKEND_URL}/api/forecast/predict/state/${encodeURIComponent(state)}?periods=${periods}&confidence=${confidence}`
+    );
+    res.json(response.data);
+  } catch (error) {
+    console.error('Forecast predict state error:', error.message);
+    res.status(503).json({ error: 'ML Backend unavailable', message: error.message });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });

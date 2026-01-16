@@ -9,6 +9,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, Legend
 } from 'recharts';
+import { ForecastChart } from './components/ForecastChart';
 
 export default function Forecast() {
   const { trends, isLoading, error } = useEnrolmentTrends();
@@ -130,6 +131,9 @@ export default function Forecast() {
             </CardContent>
           </Card>
         </div>
+
+        {/* ARIMA District Forecast Chart */}
+        <ForecastChart />
 
         {/* Enrollment Trends Chart */}
         <Card className="shadow-card">

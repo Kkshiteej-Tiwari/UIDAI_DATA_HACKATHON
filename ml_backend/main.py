@@ -90,11 +90,13 @@ app.mount("/static", StaticFiles(directory=OUTPUT_DIR), name="static")
 
 # Try to include routers - handle both old and new structures
 try:
-    from api.routes import datasets, analysis, visualizations, selection, reports, policy_api, monitor
+    from api.routes import datasets, analysis, visualizations, selection, reports, policy_api, monitor, forecast
     # Monitoring API - Primary auditor-facing interface
     app.include_router(monitor.router, tags=["Monitoring"])
     # Policy API - Government-facing policy controls
     app.include_router(policy_api.router, prefix="/api/policy", tags=["Policy Engine"])
+    # Forecast API - Time-series enrollment forecasting
+    app.include_router(forecast.router, tags=["Enrollment Forecasting"])
     # Internal APIs
     app.include_router(datasets.router, prefix="/api/ml", tags=["Internal - Datasets"])
     app.include_router(selection.router, prefix="/api/ml", tags=["Internal - Selection"])
@@ -123,7 +125,9 @@ async def root():
             "train_model": "/api/train-model",
             "risk_summary": "/api/risk-summary",
             "visualizations": "/api/visualizations",
-            "explain_model": "/api/explain-model"
+            "explain_model": "/api/explain-model",
+            "forecast_train": "/api/forecast/train",
+            "forecast_predict": "/api/forecast/predict/{district}"
         }
     }
 

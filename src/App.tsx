@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import Hotspots from "./pages/Hotspots";
-import Forecast from "./pages/Forecast";
+import Forecast from "./features/enrollment-forecast/Forecast";
 import Anomalies from "./pages/Anomalies";
 import GenderTracker from "./pages/GenderTracker";
 import RiskPredictor from "./pages/RiskPredictor";

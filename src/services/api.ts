@@ -258,8 +258,97 @@ export const healthApi = {
     check: () => fetchAPI<{ status: string; timestamp: string }>('/health'),
 };
 
+// =====================================
+// Enrollment Forecast API
+// =====================================
+
+// Use the Node.js server which proxies to ML backend
+const ML_API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
+export interface ForecastPeriod {
+    period: number;
+    predicted_enrollment: number;
+    lower_bound: number;
+    upper_bound: number;
+}
+
+export interface HistoricalStats {
+    mean: number;
+    std: number;
+    last_date: string;
+    data_points: number;
+}
+
+export interface DistrictForecast {
+    district: string;
+    periods: number;
+    confidence_level: number;
+    forecasts: ForecastPeriod[];
+    historical_stats: HistoricalStats;
+}
+
+export interface DistrictListResponse {
+    count: number;
+    districts: string[];
+}
+
+export const forecastApi = {
+    /**
+     * Get list of districts with trained forecast models
+     */
+    getDistricts: async (): Promise<DistrictListResponse> => {
+        try {
+            const response = await fetch(`${ML_API_BASE}/api/forecast/districts`);
+            if (!response.ok) throw new Error('Failed to fetch districts');
+            return await response.json();
+        } catch (error) {
+            console.error('Forecast API Error:', error);
+            // Return fallback data
+            return {
+                count: 10,
+                districts: ['Mumbai', 'Delhi', 'Bangalore', 'Chennai', 'Kolkata',
+                    'Hyderabad', 'Pune', 'Ahmedabad', 'Jaipur', 'Lucknow']
+            };
+        }
+    },
+
+    /**
+     * Get ARIMA forecast for a specific district
+     */
+    getForecast: async (district: string, periods: number = 6): Promise<DistrictForecast | null> => {
+        try {
+            const response = await fetch(
+                `${ML_API_BASE}/api/forecast/predict/${encodeURIComponent(district)}?periods=${periods}`
+            );
+            if (!response.ok) throw new Error('Failed to fetch forecast');
+            return await response.json();
+        } catch (error) {
+            console.error('Forecast API Error:', error);
+            return null;
+        }
+    },
+
+    /**
+     * Train forecast models (admin function)
+     */
+    trainModels: async (limit: number = 500, maxDistricts: number = 30) => {
+        try {
+            const response = await fetch(
+                `${ML_API_BASE}/api/forecast/train?limit=${limit}&max_districts=${maxDistricts}`,
+                { method: 'POST' }
+            );
+            if (!response.ok) throw new Error('Training failed');
+            return await response.json();
+        } catch (error) {
+            console.error('Training Error:', error);
+            return null;
+        }
+    }
+};
+
 export default {
     hotspot: hotspotApi,
     ai: aiApi,
     health: healthApi,
+    forecast: forecastApi,
 };
