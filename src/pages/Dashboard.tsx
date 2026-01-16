@@ -1,10 +1,12 @@
+import { useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import {
-  Users, MapPin, TrendingUp, AlertTriangle, ArrowRight,
-  CheckCircle2, Clock, Activity, Loader2, Shield
+  Users, MapPin, TrendingUp, AlertTriangle,
+  CheckCircle2, Clock, Activity, Loader2, Shield, Download, RefreshCw
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useStateData } from '@/hooks/useData';
@@ -23,7 +25,66 @@ const genderData = [
 ];
 
 export default function Dashboard() {
-  const { statesData, isLoading, error } = useStateData();
+  const { statesData, isLoading, error, refetch } = useStateData();
+  const { toast } = useToast();
+  const [refreshing, setRefreshing] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Data Refreshed",
+        description: "Dashboard data has been updated with latest values.",
+      });
+    } catch {
+      toast({
+        title: "Refresh Failed",
+        description: "Could not refresh data. Please try again.",
+        variant: "destructive"
+      });
+    }
+    setRefreshing(false);
+  }, [refetch, toast]);
+
+  const handleDownloadReport = useCallback(() => {
+    setDownloading(true);
+
+    // Generate report data
+    const reportData = {
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalEnrollments: getTotalEnrollments(statesData),
+        averageCoverage: getAverageEnrollmentCoverage(statesData),
+        pendingUpdates: getTotalPendingUpdates(statesData),
+        activeStates: statesData.length
+      },
+      stateWiseData: statesData.map(s => ({
+        state: s.state,
+        enrolled: s.enrolledPopulation,
+        coverage: s.enrollmentCoverage,
+        activeCenters: s.activeCenters
+      }))
+    };
+
+    // Create downloadable file
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-report-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report Downloaded",
+      description: "Dashboard report has been downloaded successfully.",
+    });
+    setDownloading(false);
+  }, [statesData, toast]);
 
   if (isLoading) {
     return (
@@ -43,8 +104,11 @@ export default function Dashboard() {
           <AlertTriangle className="h-12 w-12 mb-4" />
           <p>Error loading data. Make sure the backend servers are running.</p>
           <p className="text-sm text-muted-foreground mt-2">
-            Start with: cd server && npm run dev
+            Start with: npm run dev:all
           </p>
+          <Button className="mt-4" onClick={() => window.location.reload()}>
+            <RefreshCw className="mr-2 h-4 w-4" /> Retry
+          </Button>
         </div>
       </DashboardLayout>
     );
@@ -110,11 +174,20 @@ export default function Dashboard() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Activity className="mr-2 h-4 w-4" />
-              Live Data
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
+              {refreshing ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Activity className="mr-2 h-4 w-4" />
+              )}
+              {refreshing ? 'Refreshing...' : 'Live Data'}
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={handleDownloadReport} disabled={downloading}>
+              {downloading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
               Download Report
             </Button>
           </div>
@@ -238,11 +311,11 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg border border-border">
                   <div>
-                    <p className="font-medium">ML Fraud Detection</p>
+                    <p className="font-medium">Operations Monitoring</p>
                     <p className="text-sm text-muted-foreground">AI-powered anomaly detection</p>
                   </div>
                   <Button variant="outline" size="sm" asChild>
-                    <Link to="/anomalies">Run Analysis</Link>
+                    <Link to="/monitoring">Open</Link>
                   </Button>
                 </div>
               </div>
@@ -256,7 +329,7 @@ export default function Dashboard() {
               <CardDescription>Navigate to key features</CardDescription>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button variant="default" className="w-full justify-start bg-purple-600 hover:bg-purple-700" asChild>
+              <Button variant="default" className="w-full justify-start bg-primary hover:bg-primary/90" asChild>
                 <Link to="/monitoring">
                   <Shield className="mr-2 h-4 w-4" />
                   Operations Monitoring
@@ -277,7 +350,7 @@ export default function Dashboard() {
               <Button variant="outline" className="w-full justify-start" asChild>
                 <Link to="/anomalies">
                   <AlertTriangle className="mr-2 h-4 w-4 text-warning" />
-                  ML Anomaly Detection
+                  Anomaly Detection
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>

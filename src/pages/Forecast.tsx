@@ -1,7 +1,16 @@
+import { useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Download, TrendingUp, Calendar, Loader2, AlertTriangle } from 'lucide-react';
 import { useEnrolmentTrends, useStateData } from '@/hooks/useData';
 import { formatNumber } from '@/data/dataUtils';
@@ -10,9 +19,72 @@ import {
   BarChart, Bar, Legend
 } from 'recharts';
 
+type PeriodType = '7days' | '30days' | '90days' | '1year';
+
+const periodLabels: Record<PeriodType, string> = {
+  '7days': 'Last 7 Days',
+  '30days': 'Last 30 Days',
+  '90days': 'Last 90 Days',
+  '1year': 'Last Year'
+};
+
 export default function Forecast() {
   const { trends, isLoading, error } = useEnrolmentTrends();
   const { statesData } = useStateData();
+  const { toast } = useToast();
+  const [periodOpen, setPeriodOpen] = useState(false);
+  const [selectedPeriod, setSelectedPeriod] = useState<PeriodType>('30days');
+  const [downloading, setDownloading] = useState(false);
+
+  const handleSelectPeriod = useCallback((period: PeriodType) => {
+    setSelectedPeriod(period);
+    setPeriodOpen(false);
+    toast({
+      title: "Period Updated",
+      description: `Showing forecast for ${periodLabels[period]}`,
+    });
+  }, [toast]);
+
+  const handleExport = useCallback(() => {
+    setDownloading(true);
+
+    const totalEnrollments = trends.reduce((sum, t) => sum + t.enrollments, 0);
+    const avgMonthly = totalEnrollments / Math.max(1, trends.length);
+
+    const reportData = {
+      generatedAt: new Date().toISOString(),
+      title: "Enrollment Forecast Report",
+      period: periodLabels[selectedPeriod],
+      summary: {
+        totalEnrollments,
+        averageMonthly: avgMonthly,
+        dataPoints: trends.length,
+        projectedNextMonth: Math.round(avgMonthly * 1.05)
+      },
+      trends: trends.slice(-30),
+      stateProjections: statesData.slice(0, 8).map(state => ({
+        state: state.code,
+        current: state.enrolledPopulation,
+        projected: Math.round(state.enrolledPopulation * 1.05)
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `forecast-report-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report Exported",
+      description: "Forecast report has been downloaded.",
+    });
+    setDownloading(false);
+  }, [trends, statesData, selectedPeriod, toast]);
 
   if (isLoading) {
     return (
@@ -52,6 +124,17 @@ export default function Forecast() {
     forecast: Math.floor(state.enrolledPopulation * (1 + Math.random() * 0.1) / 1000)
   }));
 
+  // Filter trends based on selected period
+  const getPeriodData = () => {
+    switch (selectedPeriod) {
+      case '7days': return trends.slice(-7);
+      case '30days': return trends.slice(-30);
+      case '90days': return trends.slice(-90);
+      case '1year': return trends;
+      default: return trends.slice(-30);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -64,12 +147,12 @@ export default function Forecast() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setPeriodOpen(true)}>
               <Calendar className="mr-2 h-4 w-4" />
-              Select Period
+              {periodLabels[selectedPeriod]}
             </Button>
-            <Button size="sm">
-              <Download className="mr-2 h-4 w-4" />
+            <Button size="sm" onClick={handleExport} disabled={downloading}>
+              {downloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
               Export
             </Button>
           </div>
@@ -123,7 +206,7 @@ export default function Forecast() {
                   <Calendar className="h-5 w-5 text-info" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{trends.length}</p>
+                  <p className="text-2xl font-bold">{getPeriodData().length}</p>
                   <p className="text-sm text-muted-foreground">Data Points</p>
                 </div>
               </div>
@@ -135,7 +218,7 @@ export default function Forecast() {
         <Card className="shadow-card">
           <CardHeader>
             <CardTitle>Enrollment Trends</CardTitle>
-            <CardDescription>Historical enrollment and update patterns</CardDescription>
+            <CardDescription>Historical enrollment and update patterns ({periodLabels[selectedPeriod]})</CardDescription>
           </CardHeader>
           <CardContent>
             {trends.length === 0 ? (
@@ -145,7 +228,7 @@ export default function Forecast() {
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={trends.slice(-30)}>
+                <AreaChart data={getPeriodData()}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                   <XAxis dataKey="date" className="text-xs" />
                   <YAxis className="text-xs" />
@@ -226,7 +309,7 @@ export default function Forecast() {
               <div className="p-4 rounded-lg border border-border">
                 <Badge variant="secondary" className="mb-2">Capacity Planning</Badge>
                 <p className="text-sm text-muted-foreground">
-                  Based on {trends.length} data points, estimated monthly capacity needed:
+                  Based on {getPeriodData().length} data points, estimated monthly capacity needed:
                   {formatNumber(avgMonthly * 1.2)} (with 20% buffer).
                 </p>
               </div>
@@ -234,6 +317,31 @@ export default function Forecast() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Period Selection Dialog */}
+      <Dialog open={periodOpen} onOpenChange={setPeriodOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Select Time Period</DialogTitle>
+            <DialogDescription>
+              Choose the time range for forecast analysis
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-2">
+            {(Object.keys(periodLabels) as PeriodType[]).map((period) => (
+              <Button
+                key={period}
+                variant={selectedPeriod === period ? "default" : "outline"}
+                className="w-full justify-start"
+                onClick={() => handleSelectPeriod(period)}
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                {periodLabels[period]}
+              </Button>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }

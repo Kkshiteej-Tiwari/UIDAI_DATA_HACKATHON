@@ -36,7 +36,7 @@ export function useEnrolmentData(limit: number = 1000) {
 }
 
 export function useStateData() {
-    const { data, isLoading, error } = useEnrolmentData(2000);
+    const { data, isLoading, error, refetch } = useEnrolmentData(2000);
 
     const statesData: StateData[] = data?.records ? aggregateByState(data.records) : [];
 
@@ -44,6 +44,7 @@ export function useStateData() {
         statesData,
         isLoading,
         error,
+        refetch,
         totalRecords: data?.total || 0
     };
 }
@@ -106,9 +107,10 @@ export function useAnalysisStatus(jobId: string | null) {
         queryKey: ['analysis-status', jobId],
         queryFn: () => getAnalysisStatus(jobId!),
         enabled: !!jobId,
-        refetchInterval: (data) => {
+        refetchInterval: (query) => {
             // Poll every 2 seconds while processing
-            if (data?.status === 'processing' || data?.status === 'pending') {
+            const status = query.state.data?.status;
+            if (status === 'processing' || status === 'pending') {
                 return 2000;
             }
             return false;

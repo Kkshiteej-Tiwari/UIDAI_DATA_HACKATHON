@@ -1,7 +1,9 @@
+import { useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import { Download, Users, AlertCircle, TrendingUp, Loader2, AlertTriangle } from 'lucide-react';
 import { useStateData } from '@/hooks/useData';
 import { formatNumber, formatPercentage } from '@/data/dataUtils';
@@ -12,6 +14,66 @@ import {
 
 export default function GenderTracker() {
   const { statesData, isLoading, error } = useStateData();
+  const { toast } = useToast();
+  const [downloading, setDownloading] = useState(false);
+
+  const handleExportReport = useCallback(() => {
+    setDownloading(true);
+
+    const totalMale = statesData.reduce((sum, s) => sum + s.maleEnrolled, 0);
+    const totalFemale = statesData.reduce((sum, s) => sum + s.femaleEnrolled, 0);
+    const total = totalMale + totalFemale;
+    const genderRatio = totalFemale > 0 ? Math.round((totalFemale / totalMale) * 1000) : 1000;
+
+    const stateGenderData = statesData.map(state => ({
+      state: state.state,
+      code: state.code,
+      maleEnrolled: state.maleEnrolled,
+      femaleEnrolled: state.femaleEnrolled,
+      malePercent: Math.round((state.maleEnrolled / (state.maleEnrolled + state.femaleEnrolled)) * 100),
+      femalePercent: Math.round((state.femaleEnrolled / (state.maleEnrolled + state.femaleEnrolled)) * 100),
+      genderRatio: Math.round((state.femaleEnrolled / state.maleEnrolled) * 1000)
+    }));
+
+    const genderGapStates = stateGenderData.filter(s => Math.abs(s.malePercent - s.femalePercent) > 5);
+
+    const reportData = {
+      generatedAt: new Date().toISOString(),
+      title: "Gender Analysis Report",
+      nationalSummary: {
+        totalMale,
+        totalFemale,
+        total,
+        malePercent: total > 0 ? ((totalMale / total) * 100).toFixed(1) : 50,
+        femalePercent: total > 0 ? ((totalFemale / total) * 100).toFixed(1) : 50,
+        genderRatio
+      },
+      statesWithGenderGaps: genderGapStates.length,
+      stateWiseData: stateGenderData,
+      recommendations: [
+        genderRatio >= 950
+          ? "Healthy gender ratio observed. Continue monitoring for regional disparities."
+          : "Gender gap detected. Focus outreach on low-ratio districts.",
+        `${genderGapStates.length} states have gender gaps exceeding 5%.`
+      ]
+    };
+
+    const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gender-analysis-report-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Report Exported",
+      description: "Gender analysis report has been downloaded.",
+    });
+    setDownloading(false);
+  }, [statesData, toast]);
 
   if (isLoading) {
     return (
@@ -73,8 +135,8 @@ export default function GenderTracker() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm">
-              <Download className="mr-2 h-4 w-4" />
+            <Button variant="outline" size="sm" onClick={handleExportReport} disabled={downloading}>
+              {downloading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
               Export Report
             </Button>
           </div>
