@@ -6,6 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>UIDAI Analytics Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js for interactive graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet.js for interactive maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
 <body>
@@ -44,9 +49,40 @@
                         <p>Overview of enrollment statistics and key metrics</p>
                     </div>
 
+                    <!-- Interactive Map -->
+                    <div class="feature-card" onclick="loadFeature('map')" style="border: 2px solid #00d4ff;">
+                        <div class="feature-icon">🗺️</div>
+                        <h3>Gender Gap Map</h3>
+                        <p>Interactive choropleth map of India</p>
+                        <span style="color: #00d4ff; font-size: 0.7rem;">NEW</span>
+                    </div>
+
+                    <!-- Vulnerable Groups -->
+                    <div class="feature-card" onclick="loadFeature('vulnerable')" style="border: 2px solid #ff9900;">
+                        <div class="feature-icon">👵</div>
+                        <h3>Vulnerable Groups</h3>
+                        <p>Elderly, children, disabled inclusion</p>
+                        <span style="color: #ff9900; font-size: 0.7rem;">NEW</span>
+                    </div>
+
+                    <!-- Gender Tracker -->
+                    <div class="feature-card" onclick="loadFeature('gender')">
+                        <div class="feature-icon">👥</div>
+                        <h3>Gender Tracker</h3>
+                        <p>Gender inclusion gap analysis</p>
+                    </div>
+
+                    <!-- Impact Simulator -->
+                    <div class="feature-card" onclick="loadFeature('simulator')" style="border: 2px solid #00ff88;">
+                        <div class="feature-icon">💰</div>
+                        <h3>Impact Simulator</h3>
+                        <p>ROI calculator for interventions</p>
+                        <span style="color: #00ff88; font-size: 0.7rem;">NEW</span>
+                    </div>
+
                     <!-- Hotspots -->
                     <div class="feature-card" onclick="loadFeature('hotspots')">
-                        <div class="feature-icon">🗺️</div>
+                        <div class="feature-icon">📍</div>
                         <h3>Geographic Hotspots</h3>
                         <p>Gi* spatial analysis and coverage mapping</p>
                     </div>
@@ -58,25 +94,11 @@
                         <p>ML-powered fraud and anomaly alerts</p>
                     </div>
 
-                    <!-- Gender Tracker -->
-                    <div class="feature-card" onclick="loadFeature('gender')">
-                        <div class="feature-icon">👥</div>
-                        <h3>Gender Tracker</h3>
-                        <p>Gender inclusion gap analysis</p>
-                    </div>
-
                     <!-- Risk Predictor -->
                     <div class="feature-card" onclick="loadFeature('risk')">
                         <div class="feature-icon">🔮</div>
                         <h3>Risk Predictor</h3>
                         <p>Biometric re-enrollment risk prediction</p>
-                    </div>
-
-                    <!-- Enrollment Forecast -->
-                    <div class="feature-card" onclick="loadFeature('forecast')">
-                        <div class="feature-icon">📅</div>
-                        <h3>Enrollment Forecast</h3>
-                        <p>Time-series enrollment predictions</p>
                     </div>
                 </div>
             </section>

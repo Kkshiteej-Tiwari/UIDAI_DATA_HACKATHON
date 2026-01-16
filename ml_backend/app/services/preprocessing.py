@@ -9,19 +9,12 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
 from sklearn.impute import SimpleImputer, KNNImputer
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
-<<<<<<< HEAD
-import structlog
-
-from ..core.config import settings
-
-logger = structlog.get_logger()
-=======
 import logging
 
 from ..core.config import settings
 
 logger = logging.getLogger(__name__)
->>>>>>> origin/ridwan/gender-tracker-v2
+
 
 
 @dataclass
