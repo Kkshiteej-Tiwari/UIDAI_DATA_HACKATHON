@@ -1,0 +1,164 @@
+{
+  "sample_spatial_analysis_request": {
+    "description": "POST /api/hotspots/spatial-analysis",
+    "request": {
+      "states": ["Maharashtra", "Bihar", "Uttar Pradesh"],
+      "date_range": {
+        "start": "2024-01",
+        "end": "2024-12"
+      }
+    },
+    "response": {
+      "success": true,
+      "morans_i": {
+        "morans_i": 0.432,
+        "p_value": 0.0012,
+        "z_score": 3.21,
+        "interpretation": "Shows strong positive spatial autocorrelation (clustering of similar values). Result is statistically significant (p=0.0012).",
+        "expected_i": -0.034,
+        "n": 30
+      },
+      "hotspots": [
+        {
+          "state": "Kerala",
+          "penetration_rate": 0.96,
+          "gi_z_score": 2.87,
+          "confidence_level": "99%"
+        },
+        {
+          "state": "Goa",
+          "penetration_rate": 0.97,
+          "gi_z_score": 2.65,
+          "confidence_level": "99%"
+        }
+      ],
+      "coldspots": [
+        {
+          "state": "Nagaland",
+          "penetration_rate": 0.63,
+          "gi_z_score": -2.45,
+          "confidence_level": "95%"
+        },
+        {
+          "state": "Arunachal Pradesh",
+          "penetration_rate": 0.60,
+          "gi_z_score": -2.78,
+          "confidence_level": "99%"
+        }
+      ],
+      "summary": {
+        "total_regions": 30,
+        "hotspot_count": 5,
+        "coldspot_count": 4,
+        "neutral_count": 21
+      }
+    }
+  },
+  "sample_anomalies_request": {
+    "description": "POST /api/hotspots/anomalies",
+    "request": {
+      "threshold": 2.0,
+      "granularity": "state"
+    },
+    "response": {
+      "success": true,
+      "threshold": 2.0,
+      "granularity": "state",
+      "anomalies": [
+        {
+          "region": "Arunachal Pradesh",
+          "value": 0.60,
+          "z_score": -2.78,
+          "severity": "high",
+          "direction": "below",
+          "mean": 0.82,
+          "std": 0.08
+        },
+        {
+          "region": "Nagaland",
+          "value": 0.63,
+          "z_score": -2.45,
+          "severity": "medium",
+          "direction": "below",
+          "mean": 0.82,
+          "std": 0.08
+        }
+      ],
+      "summary": {
+        "total_anomalies": 4,
+        "critical": 0,
+        "high": 2,
+        "medium": 2
+      }
+    }
+  },
+  "sample_forecast_request": {
+    "description": "POST /api/forecast/state/Maharashtra",
+    "request": {
+      "horizon_months": 6
+    },
+    "response": {
+      "success": true,
+      "state": "Maharashtra",
+      "forecast": {
+        "forecast": [1234567, 1256789, 1278901, 1301012, 1323123, 1345234],
+        "lower_ci": [1134567, 1146789, 1158901, 1171012, 1183123, 1195234],
+        "upper_ci": [1334567, 1366789, 1398901, 1431012, 1463123, 1495234],
+        "dates": ["2025-02", "2025-03", "2025-04", "2025-05", "2025-06", "2025-07"],
+        "confidence_level": 0.95,
+        "method": "SARIMA"
+      },
+      "model_info": {
+        "order": [1, 1, 1],
+        "aic": 245.67,
+        "diagnostics": {
+          "ljung_box_pvalue": 0.45,
+          "normality_pvalue": 0.23,
+          "mape": 4.56
+        }
+      }
+    }
+  },
+  "sample_scenario_request": {
+    "description": "POST /api/forecast/scenario-comparison",
+    "request": {
+      "states": ["Bihar", "Jharkhand"],
+      "intervention_params": {
+        "boost_percent": 15,
+        "start_month": 0,
+        "duration_months": 3
+      },
+      "horizon_months": 6
+    },
+    "response": {
+      "success": true,
+      "states": {
+        "Bihar": {
+          "state": "Bihar",
+          "baseline": {
+            "forecast": [500000, 510000, 520000, 530000, 540000, 550000]
+          },
+          "intervention": {
+            "forecast": [575000, 586500, 598000, 530000, 540000, 550000],
+            "boost_percent": 15
+          },
+          "difference": [75000, 76500, 78000, 0, 0, 0],
+          "cumulative_impact": 229500,
+          "summary": {
+            "baseline_total": 3150000,
+            "intervention_total": 3379500,
+            "percent_increase": 7.29
+          }
+        }
+      },
+      "total_impact": 458000
+    }
+  },
+  "curl_examples": {
+    "spatial_analysis": "curl -X POST http://localhost:8000/api/hotspots/spatial-analysis -H \"Content-Type: application/json\" -d '{\"states\": [\"Maharashtra\", \"Bihar\"]}'",
+    "anomalies": "curl -X POST http://localhost:8000/api/hotspots/anomalies -H \"Content-Type: application/json\" -d '{\"threshold\": 2.0, \"granularity\": \"state\"}'",
+    "heatmap": "curl http://localhost:8000/api/hotspots/heatmap/Maharashtra",
+    "forecast": "curl -X POST http://localhost:8000/api/forecast/state/Maharashtra -H \"Content-Type: application/json\" -d '{\"horizon_months\": 6}'",
+    "scenario": "curl -X POST http://localhost:8000/api/forecast/scenario-comparison -H \"Content-Type: application/json\" -d '{\"states\": [\"Bihar\"], \"intervention_params\": {\"boost_percent\": 10, \"start_month\": 0, \"duration_months\": 3}}'"
+  }
+}

@@ -152,8 +152,8 @@ async function loadHotspots() {
         const response = await fetch(`${API_BASE}/hotspots/gi-star?limit=200`);
         const data = await response.json();
 
-        if (data.success && data.data) {
-            const { summary, coldspots, hotspots } = data.data;
+        if (data.success && data.summary) {
+            const { summary, coldspots, hotspots } = data;
 
             showContent(`
                 <div class="stats-grid">

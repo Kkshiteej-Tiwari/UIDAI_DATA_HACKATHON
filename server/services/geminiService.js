@@ -3,15 +3,14 @@ import axios from 'axios';
 let currentKeyIndex = 0;
 
 /**
- * Get Google Gemini API keys array (read at request time after dotenv has loaded)
+ * Get Groq API keys array (read at request time after dotenv has loaded)
  */
 function getApiKeys() {
     return [
-        process.env.GEMINI_API_KEY_1,
-        process.env.GEMINI_API_KEY_2,
-        process.env.GEMINI_API_KEY_3,
-        process.env.GEMINI_API_KEY_4,
-        process.env.GEMINI_API_KEY_5
+        process.env.GROQ_API_KEY_1,
+        process.env.GROQ_API_KEY_2,
+        process.env.GROQ_API_KEY_3,
+        process.env.GROQ_API_KEY_4
     ].filter(Boolean);
 }
 
@@ -26,13 +25,13 @@ function getNextKey() {
 }
 
 /**
- * Generate AI recommendation using Google Gemini API (gemini-2.0-flash)
- * @param {string} prompt - The prompt for Gemini
+ * Generate AI recommendation using Groq API (llama-3.3-70b-versatile)
+ * @param {string} prompt - The prompt for Groq
  * @param {object} data - Data context for the recommendation
  */
 export async function generateRecommendation(prompt, data = null) {
     const apiKey = getNextKey();
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const url = 'https://api.groq.com/openai/v1/chat/completions';
 
     const fullPrompt = data
         ? `${prompt}\n\nData Context:\n${JSON.stringify(data, null, 2)}`
@@ -40,20 +39,27 @@ export async function generateRecommendation(prompt, data = null) {
 
     try {
         const response = await axios.post(url, {
-            contents: [{
-                parts: [{ text: fullPrompt }]
-            }]
+            model: "llama-3.3-70b-versatile",
+            messages: [{
+                role: "user",
+                content: fullPrompt
+            }],
+            temperature: 0.7,
+            max_tokens: 1024
         }, {
-            headers: { 'Content-Type': 'application/json' }
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${apiKey}`
+            }
         });
 
-        const content = response.data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const content = response.data.choices?.[0]?.message?.content;
         return {
             success: true,
             recommendation: content || 'No recommendation generated'
         };
     } catch (error) {
-        console.error('Gemini API Error:', error.response?.data || error.message);
+        console.error('Groq API Error:', error.response?.data || error.message);
 
         // Try next key if rate limited (429)
         if (error.response?.status === 429 && getApiKeys().length > 1) {

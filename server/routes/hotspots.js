@@ -429,4 +429,152 @@ function generateActionRecommendation(region) {
     return recommendations.length > 0 ? recommendations : ['Monitor and maintain current efforts'];
 }
 
+// ============================================
+// ML BACKEND PROXY ROUTES
+// Forwards geospatial analysis requests to Python FastAPI backend
+// ============================================
+
+const ML_BACKEND_URL = process.env.ML_BACKEND_URL || 'http://localhost:8000';
+
+// Simple in-memory cache with 1-hour TTL
+const cache = new Map();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function getCachedOrFetch(key, fetchFn) {
+    const cached = cache.get(key);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return Promise.resolve(cached.data);
+    }
+    return fetchFn().then(data => {
+        cache.set(key, { data, timestamp: Date.now() });
+        return data;
+    });
+}
+
+/**
+ * POST /api/hotspots/geospatial/spatial
+ * Proxy to ML backend for spatial analysis with Moran's I and Getis-Ord Gi*
+ */
+router.post('/geospatial/spatial', async (req, res) => {
+    try {
+        const cacheKey = `spatial:${JSON.stringify(req.body)}`;
+
+        const data = await getCachedOrFetch(cacheKey, async () => {
+            const response = await fetch(`${ML_BACKEND_URL}/api/hotspots/spatial-analysis`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(req.body)
+            });
+            if (!response.ok) {
+                throw new Error(`ML Backend error: ${response.status}`);
+            }
+            return response.json();
+        });
+
+        res.json(data);
+    } catch (error) {
+        console.error('Geospatial spatial analysis proxy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/hotspots/geospatial/anomalies
+ * Proxy to ML backend for anomaly detection
+ */
+router.post('/geospatial/anomalies', async (req, res) => {
+    try {
+        const response = await fetch(`${ML_BACKEND_URL}/api/hotspots/anomalies`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+
+        if (!response.ok) {
+            throw new Error(`ML Backend error: ${response.status}`);
+        }
+
+        res.json(await response.json());
+    } catch (error) {
+        console.error('Geospatial anomalies proxy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * GET /api/hotspots/geospatial/heatmap/:state
+ * Proxy to ML backend for state heatmap data
+ */
+router.get('/geospatial/heatmap/:state', async (req, res) => {
+    try {
+        const { state } = req.params;
+        const cacheKey = `heatmap:${state}`;
+
+        const data = await getCachedOrFetch(cacheKey, async () => {
+            const response = await fetch(
+                `${ML_BACKEND_URL}/api/hotspots/heatmap/${encodeURIComponent(state)}`
+            );
+            if (!response.ok) {
+                throw new Error(`ML Backend error: ${response.status}`);
+            }
+            return response.json();
+        });
+
+        res.json(data);
+    } catch (error) {
+        console.error('Geospatial heatmap proxy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/hotspots/geospatial/forecast/:state
+ * Proxy to ML backend for state forecast
+ */
+router.post('/geospatial/forecast/:state', async (req, res) => {
+    try {
+        const { state } = req.params;
+        const response = await fetch(
+            `${ML_BACKEND_URL}/api/forecast/state/${encodeURIComponent(state)}`,
+            {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(req.body)
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error(`ML Backend error: ${response.status}`);
+        }
+
+        res.json(await response.json());
+    } catch (error) {
+        console.error('Geospatial forecast proxy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/**
+ * POST /api/hotspots/geospatial/scenario
+ * Proxy to ML backend for scenario comparison
+ */
+router.post('/geospatial/scenario', async (req, res) => {
+    try {
+        const response = await fetch(`${ML_BACKEND_URL}/api/forecast/scenario-comparison`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(req.body)
+        });
+
+        if (!response.ok) {
+            throw new Error(`ML Backend error: ${response.status}`);
+        }
+
+        res.json(await response.json());
+    } catch (error) {
+        console.error('Geospatial scenario proxy error:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 export default router;

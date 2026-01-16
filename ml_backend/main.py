@@ -88,25 +88,60 @@ app.add_middleware(
 # Mount static files for visualizations
 app.mount("/static", StaticFiles(directory=OUTPUT_DIR), name="static")
 
-# Try to include routers - handle both old and new structures
+# Import and register routers with proper error handling
+router_errors = []
+
+# Try new API structure
 try:
-    from api.routes import datasets, analysis, visualizations, selection, reports, policy_api, monitor
-    # Monitoring API - Primary auditor-facing interface
-    app.include_router(monitor.router, tags=["Monitoring"])
-    # Policy API - Government-facing policy controls
-    app.include_router(policy_api.router, prefix="/api/policy", tags=["Policy Engine"])
-    # Internal APIs
-    app.include_router(datasets.router, prefix="/api/ml", tags=["Internal - Datasets"])
-    app.include_router(selection.router, prefix="/api/ml", tags=["Internal - Selection"])
-    app.include_router(analysis.router, prefix="/api/ml", tags=["Internal - Analysis"])
-    app.include_router(visualizations.router, prefix="/api/ml", tags=["Internal - Visualizations"])
-    app.include_router(reports.router, prefix="/api/ml", tags=["Internal - Reports"])
-except ImportError:
-    # Fallback to old router structure
-    from routers import datasets, analysis, visualizations
+    from api.routes import datasets, analysis, visualizations, selection, reports
     app.include_router(datasets.router, prefix="/api", tags=["Datasets"])
+    app.include_router(selection.router, prefix="/api", tags=["Selection"])
     app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
     app.include_router(visualizations.router, prefix="/api", tags=["Visualizations"])
+    app.include_router(reports.router, prefix="/api", tags=["Reports"])
+    logger.info("✅ Core API routes registered")
+except ImportError as e:
+    router_errors.append(f"Core routes: {e}")
+    # Fallback to old structure
+    try:
+        from routers import datasets, analysis, visualizations
+        app.include_router(datasets.router, prefix="/api", tags=["Datasets"])
+        app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
+        app.include_router(visualizations.router, prefix="/api", tags=["Visualizations"])
+        logger.info("✅ Legacy API routes registered")
+    except ImportError as e2:
+        router_errors.append(f"Legacy routes: {e2}")
+
+# Monitoring API
+try:
+    from api.routes import monitor
+    app.include_router(monitor.router, tags=["Monitoring"])
+    logger.info("✅ Monitoring routes registered")
+except ImportError as e:
+    router_errors.append(f"Monitor: {e}")
+
+# Policy API
+try:
+    from api.routes import policy_api
+    app.include_router(policy_api.router, prefix="/api/policy", tags=["Policy Engine"])
+    logger.info("✅ Policy routes registered")
+except ImportError as e:
+    router_errors.append(f"Policy: {e}")
+
+# Geospatial Hotspot Detection API - CRITICAL
+try:
+    from api.routes.geospatial import router as hotspots_router, forecast_router
+    app.include_router(hotspots_router, tags=["Geospatial Hotspot Detection"])
+    app.include_router(forecast_router, tags=["Forecasting"])
+    logger.info("✅ Geospatial hotspot routes registered at /api/hotspots/*")
+except Exception as e:
+    logger.error(f"❌ FAILED to register geospatial routes: {e}")
+    router_errors.append(f"Geospatial: {e}")
+
+# Log any router errors
+if router_errors:
+    for error in router_errors:
+        logger.warning(f"Router registration issue: {error}")
 
 
 @app.get("/")
