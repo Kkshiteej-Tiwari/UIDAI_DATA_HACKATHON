@@ -1,7 +1,7 @@
 {
   "name": "uidai-backend",
   "version": "1.0.0",
-  "description": "Backend server for UIDAI Aadhaar Citizen Hub",
+  "description": "Backend server for UIDAI Aadhaar Citizen Hub and Geographic Hotspot Detection Engine",
   "main": "index.js",
   "type": "module",
   "scripts": {

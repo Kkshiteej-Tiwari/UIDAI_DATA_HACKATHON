@@ -1,14 +1,23 @@
 """
-UIDAI ML Fraud Detection Backend - FastAPI Application
-Main entry point for the ML backend server.
+UIDAI ML Backend - FastAPI Application
+
+Combines:
+- Biometric Re-enrollment Risk Predictor
+- ML Fraud Detection Backend
+
+PRIVACY SAFEGUARDS:
+- Uses ONLY aggregated data from public government APIs
+- No individual Aadhaar numbers processed
+- All operations on state/district/age-group level
 """
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+import os
 
-from config import get_settings
-from api.routes import datasets, analysis, visualizations, selection, reports, policy_api, monitor
+from config import get_settings, OUTPUT_DIR, VISUALIZATION_DIR, MODEL_DIR, REPORT_DIR
 
 # Configure logging
 logging.basicConfig(
@@ -17,14 +26,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Create output directories
+for directory in [OUTPUT_DIR, VISUALIZATION_DIR, MODEL_DIR, REPORT_DIR]:
+    os.makedirs(directory, exist_ok=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown events."""
     # Startup
-    logger.info("🚀 UIDAI ML Fraud Detection Backend starting...")
+    logger.info("🚀 UIDAI ML Backend starting...")
     settings = get_settings()
-    logger.info(f"📊 Configured for {len(datasets.get_available_datasets())} datasets")
+    logger.info("📊 ML Backend configured and ready")
     yield
     # Shutdown
     logger.info("👋 UIDAI ML Backend shutting down...")
@@ -32,20 +45,24 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI application
 app = FastAPI(
-    title="UIDAI ML Fraud Detection API",
+    title="UIDAI ML Analytics API",
     description="""
-    AI-powered fraud detection system for Aadhaar enrolment and update data.
+    Unified ML-powered system for Aadhaar analytics.
     
     ## Features
-    - **Dataset Selection**: Choose from 3 official data.gov.in APIs
-    - **ML Analysis**: Automatic model selection and ensemble scoring
-    - **Explainability**: Human-readable fraud reasons
-    - **Visualizations**: Interactive charts and heatmaps
+    - **Biometric Risk Prediction**: Predict authentication failure risk
+    - **Fraud Detection**: Automatic model selection and ensemble scoring
+    - **Dataset Fusion**: Combine multiple data.gov.in APIs
+    - **Explainability**: SHAP-based and human-readable explanations
+    - **Visualizations**: Interactive policy-ready charts
     
     ## Models Used
-    - Isolation Forest (baseline anomaly detection)
+    - Random Forest & XGBoost (risk prediction)
+    - Isolation Forest (anomaly detection)
     - PyTorch Autoencoder (deep pattern recognition)
     - HDBSCAN (spatial clustering)
+    
+    **Privacy:** Uses only aggregated, anonymized government data.
     """,
     version="1.0.0",
     lifespan=lifespan
@@ -54,37 +71,71 @@ app = FastAPI(
 # CORS middleware for frontend integration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000", "http://localhost:8080"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:8080",
+        "http://localhost:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8080",
+        "*"
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
+# Mount static files for visualizations
+app.mount("/static", StaticFiles(directory=OUTPUT_DIR), name="static")
 
-# Health check endpoint
+# Try to include routers - handle both old and new structures
+try:
+    from api.routes import datasets, analysis, visualizations, selection, reports, policy_api, monitor
+    # Monitoring API - Primary auditor-facing interface
+    app.include_router(monitor.router, tags=["Monitoring"])
+    # Policy API - Government-facing policy controls
+    app.include_router(policy_api.router, prefix="/api/policy", tags=["Policy Engine"])
+    # Internal APIs
+    app.include_router(datasets.router, prefix="/api/ml", tags=["Internal - Datasets"])
+    app.include_router(selection.router, prefix="/api/ml", tags=["Internal - Selection"])
+    app.include_router(analysis.router, prefix="/api/ml", tags=["Internal - Analysis"])
+    app.include_router(visualizations.router, prefix="/api/ml", tags=["Internal - Visualizations"])
+    app.include_router(reports.router, prefix="/api/ml", tags=["Internal - Reports"])
+except ImportError:
+    # Fallback to old router structure
+    from routers import datasets, analysis, visualizations
+    app.include_router(datasets.router, prefix="/api", tags=["Datasets"])
+    app.include_router(analysis.router, prefix="/api", tags=["Analysis"])
+    app.include_router(visualizations.router, prefix="/api", tags=["Visualizations"])
+
+
+@app.get("/")
+async def root():
+    """Health check and API info"""
+    return {
+        "status": "healthy",
+        "project": "UIDAI ML Analytics API",
+        "version": "1.0.0",
+        "endpoints": {
+            "datasets": "/api/datasets",
+            "select_dataset": "/api/select-dataset",
+            "analyze": "/api/analyze",
+            "train_model": "/api/train-model",
+            "risk_summary": "/api/risk-summary",
+            "visualizations": "/api/visualizations",
+            "explain_model": "/api/explain-model"
+        }
+    }
+
+
 @app.get("/health", tags=["System"])
 async def health_check():
     """Check if the ML backend is running."""
     return {
         "status": "healthy",
-        "service": "UIDAI ML Fraud Detection Backend",
+        "service": "UIDAI ML Analytics Backend",
         "version": "1.0.0"
     }
-
-
-# Include routers
-# Monitoring API - Primary auditor-facing interface (intent-based, no ML terms)
-app.include_router(monitor.router, tags=["Monitoring"])
-
-# Policy API - Government-facing policy controls
-app.include_router(policy_api.router, prefix="/api/policy", tags=["Policy Engine"])
-
-# Internal APIs (for development/debugging only)
-app.include_router(datasets.router, prefix="/api/ml", tags=["Internal - Datasets"])
-app.include_router(selection.router, prefix="/api/ml", tags=["Internal - Selection"])
-app.include_router(analysis.router, prefix="/api/ml", tags=["Internal - Analysis"])
-app.include_router(visualizations.router, prefix="/api/ml", tags=["Internal - Visualizations"])
-app.include_router(reports.router, prefix="/api/ml", tags=["Internal - Reports"])
 
 
 if __name__ == "__main__":

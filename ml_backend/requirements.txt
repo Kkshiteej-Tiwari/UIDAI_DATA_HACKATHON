@@ -1,7 +1,7 @@
-# UIDAI ML Fraud Detection Backend
-# Python Dependencies
+# UIDAI ML Backend - Unified Dependencies
+# Combines: Risk Predictor, Fraud Detection, Gender Tracker
 
-# Web Framework
+# FastAPI & Server
 fastapi==0.109.2
 uvicorn[standard]==0.27.1
 python-multipart==0.0.9
@@ -11,9 +11,16 @@ pandas==2.2.0
 numpy==1.26.4
 scipy==1.12.0
 
-# Machine Learning
+# ML & Models
 scikit-learn==1.4.0
+xgboost==2.0.3
+lightgbm==4.2.0
 hdbscan==0.8.33
+optuna==3.5.0
+imbalanced-learn==0.11.0
+
+# Explainability
+shap==0.44.0
 
 # Deep Learning
 torch==2.2.0
@@ -25,11 +32,21 @@ seaborn==0.13.2
 plotly==5.18.0
 kaleido==0.2.1
 
-# API & HTTP
+# Geospatial
+geopandas==0.14.2
+folium==0.15.1
+shapely==2.0.2
+
+# Reports
+reportlab==4.0.8
+fpdf2==2.7.6
+
+# HTTP & API
 httpx==0.26.0
+aiohttp==3.9.1
 requests==2.31.0
 
-# Environment & Config
+# Configuration & Security
 python-dotenv==1.0.1
 pydantic==2.6.1
 pydantic-settings==2.1.0
@@ -37,3 +54,8 @@ pydantic-settings==2.1.0
 # Utilities
 joblib==1.3.2
 tqdm==4.66.2
+structlog==24.1.0
+
+# Testing
+pytest==7.4.4
+pytest-asyncio==0.23.3
