@@ -348,12 +348,6 @@ export default function Dashboard() {
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>
-                <Link to="/anomalies">
-                  <AlertTriangle className="mr-2 h-4 w-4 text-warning" />
-                  Anomaly Detection
-                </Link>
-              </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
                 <Link to="/gender">
                   <Users className="mr-2 h-4 w-4 text-info" />
                   Gender Analysis

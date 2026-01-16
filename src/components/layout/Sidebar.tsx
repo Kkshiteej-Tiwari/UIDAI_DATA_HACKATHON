@@ -31,7 +31,6 @@ const mainNavItems: NavItem[] = [
   { title: 'Operations Monitoring', href: '/monitoring', icon: Shield },
   { title: 'Geographic Hotspots', href: '/hotspots', icon: MapPin },
   { title: 'Enrollment Forecast', href: '/forecast', icon: TrendingUp },
-  { title: 'Anomaly Detection', href: '/anomalies', icon: AlertTriangle, badge: 3 },
   { title: 'Gender Tracker', href: '/gender', icon: Users },
 ];
 
