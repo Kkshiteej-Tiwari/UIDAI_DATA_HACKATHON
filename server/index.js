@@ -22,6 +22,7 @@ import hotspotsRoutes from './routes/hotspots.js';
 const app = express();
 const PORT = process.env.PORT || 3001;
 const ML_BACKEND_URL = process.env.ML_BACKEND_URL || 'http://localhost:8000';
+const MONITORING_BACKEND_URL = process.env.MONITORING_BACKEND_URL || 'http://localhost:8001';
 
 // Middleware
 app.use(cors());
@@ -37,6 +38,38 @@ app.use('/api/biometric', biometricRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/hotspots', hotspotsRoutes);
+
+// Operations Monitoring Proxy - Forward to operations_monitoring backend on port 8001
+app.use('/api/monitor', async (req, res) => {
+  try {
+    const targetUrl = `${MONITORING_BACKEND_URL}/api/monitor${req.url}`;
+    console.log(`🛡️  Monitoring API: ${req.method} ${targetUrl}`);
+
+    const response = await axios({
+      method: req.method,
+      url: targetUrl,
+      data: req.body,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      timeout: 120000
+    });
+
+    res.status(response.status).json(response.data);
+  } catch (error) {
+    if (error.response) {
+      res.status(error.response.status).json(error.response.data);
+    } else if (error.code === 'ECONNREFUSED') {
+      res.status(503).json({
+        error: 'Monitoring Backend Unavailable',
+        message: 'The operations monitoring backend is not running. Start it with: cd operations_monitoring/backend && start.bat'
+      });
+    } else {
+      console.error('Monitoring Proxy Error:', error.message);
+      res.status(500).json({ error: 'Monitoring proxy error', message: error.message });
+    }
+  }
+});
 
 // ML Backend Proxy - Forward requests to Python FastAPI ML backend
 app.use('/api/ml', async (req, res) => {
@@ -89,6 +122,7 @@ app.listen(PORT, () => {
   console.log(`🚀 UIDAI Backend Server running on http://localhost:${PORT}`);
   console.log(`📊 Dashboard API: http://localhost:${PORT}/api/dashboard`);
   console.log(`🤖 AI API: http://localhost:${PORT}/api/ai`);
+  console.log(`🛡️  Monitoring API (proxied): http://localhost:${PORT}/api/monitor → ${MONITORING_BACKEND_URL}`);
   console.log(`🧠 ML API (proxied): http://localhost:${PORT}/api/ml → ${ML_BACKEND_URL}`);
   console.log(`🗺️  Hotspots API: http://localhost:${PORT}/api/hotspots`);
   console.log(`📈 Spatial Analysis: http://localhost:${PORT}/api/hotspots/spatial`);
