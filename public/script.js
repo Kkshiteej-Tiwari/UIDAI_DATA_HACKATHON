@@ -174,37 +174,68 @@ function normalizeStateNameForLookup(name) {
 
 async function loadDistrictGeoJSON() {
     console.log('\n' + '='.repeat(60));
-    console.log('🗺️ LOADING MAP DATA');
+    console.log('🗺️ LOADING MAP DATA (EEI)');
     console.log('='.repeat(60));
 
     try {
-        // Step 1: Fetch penetration data from /api/penetration/state
-        console.log('\n📥 Step 1: Fetching penetration data from /api/penetration/state...');
-        const dataResponse = await fetch('/api/penetration/state');
+        // Step 1: Fetch EEI data from /api/penetration/eei
+        console.log('\n📥 Step 1: Fetching EEI data from /api/penetration/eei...');
+        const dataResponse = await fetch('/api/penetration/eei');
 
         if (!dataResponse.ok) {
-            throw new Error(`Failed to fetch penetration data: ${dataResponse.status}`);
+            throw new Error(`Failed to fetch EEI data: ${dataResponse.status}`);
         }
 
-        const penetrationData = await dataResponse.json();
-        console.log(`✅ Penetration data received: ${penetrationData.length} states`);
+        const eeiResult = await dataResponse.json();
+        console.log(`✅ EEI data received: ${eeiResult.count} states`);
 
         // Step 2: Store in Map keyed by normalized state name
         console.log('\n📊 Step 2: Building state data Map...');
         stateDataMap.clear();
 
-        penetrationData.forEach(item => {
+        let statesWithEEI = 0;
+        let statesMissingData = 0;
+        const eeiValues = [];
+
+        eeiResult.data.forEach(item => {
             const normalizedName = normalizeStateNameForLookup(item.state);
+
+            if (item.eei !== null) {
+                statesWithEEI++;
+                eeiValues.push({ state: item.state, eei: item.eei });
+            } else {
+                statesMissingData++;
+            }
+
             stateDataMap.set(normalizedName, {
                 state: item.state,
-                penetration_pct: item.penetration_pct,
-                total_enrollment: item.total_enrollment,
-                population: item.population
+                eei: item.eei,
+                actual_enrollment: item.actual_enrollment,
+                expected_enrollment: item.expected_enrollment
             });
         });
 
         console.log(`   Map created with ${stateDataMap.size} entries`);
         window.stateDataMap = stateDataMap; // Store globally for debugging
+
+        // Validation Logging
+        console.log('\n🔍 EEI Validation Stats:');
+        console.log(`   States with EEI computed: ${statesWithEEI}`);
+        console.log(`   States missing data: ${statesMissingData}`);
+
+        if (eeiValues.length > 0) {
+            eeiValues.sort((a, b) => b.eei - a.eei);
+
+            console.log('\n🏆 Top 5 States by EEI:');
+            eeiValues.slice(0, 5).forEach((item, i) => {
+                console.log(`   ${i + 1}. ${item.state}: ${item.eei.toFixed(2)}`);
+            });
+
+            console.log('\n⚠️ Bottom 5 States by EEI:');
+            eeiValues.slice(-5).reverse().forEach((item, i) => {
+                console.log(`   ${i + 1}. ${item.state}: ${item.eei.toFixed(2)}`);
+            });
+        }
 
         // Step 3: Fetch GeoJSON
         console.log('\n📥 Step 3: Fetching GeoJSON boundaries...');
@@ -219,32 +250,8 @@ async function loadDistrictGeoJSON() {
         const totalGeoJSONStates = geojson.features.length;
         console.log(`✅ GeoJSON loaded: ${totalGeoJSONStates} features`);
 
-        // Step 4: Match GeoJSON states with data
-        console.log('\n🔗 Step 4: Matching GeoJSON states with penetration data...');
-        let matchedCount = 0;
-        const unmatchedStates = [];
-
-        geojson.features.forEach(feature => {
-            const geoName = feature.properties.NAME_1 || feature.properties.name || feature.properties.ST_NM || '';
-            const normalizedGeoName = normalizeStateNameForLookup(geoName);
-
-            if (stateDataMap.has(normalizedGeoName)) {
-                matchedCount++;
-            } else {
-                unmatchedStates.push(geoName);
-            }
-        });
-
-        console.log(`   📍 Total GeoJSON states: ${totalGeoJSONStates}`);
-        console.log(`   ✅ States matched: ${matchedCount}`);
-        console.log(`   ⚠️ States unmatched: ${unmatchedStates.length}`);
-
-        if (unmatchedStates.length > 0) {
-            console.log(`   Unmatched names: ${unmatchedStates.join(', ')}`);
-        }
-
-        // Step 5: Create choropleth layer
-        console.log('\n🎨 Step 5: Creating choropleth layer...');
+        // Step 4: Create choropleth layer
+        console.log('\n🎨 Step 4: Creating choropleth layer...');
         geojsonLayer = L.geoJSON(geojson, {
             style: (feature) => getFeatureStyleFromMap(feature),
             onEachFeature: (feature, layer) => bindFeatureEventsFromMap(feature, layer)
@@ -257,7 +264,7 @@ async function loadDistrictGeoJSON() {
         hideLoadingOverlay();
 
         console.log('\n' + '='.repeat(60));
-        console.log('✅ MAP RENDERING COMPLETE');
+        console.log('✅ MAP RENDERING COMPLETE (EEI Applied)');
         console.log('='.repeat(60) + '\n');
 
     } catch (error) {
@@ -268,18 +275,18 @@ async function loadDistrictGeoJSON() {
 }
 
 /**
- * Get feature style using Map lookup
+ * Get feature style using EEI
  */
 function getFeatureStyleFromMap(feature) {
     const geoName = feature.properties.NAME_1 || feature.properties.name || feature.properties.ST_NM || '';
     const normalizedName = normalizeStateNameForLookup(geoName);
     const data = stateDataMap.get(normalizedName);
 
-    // Check if data exists and has valid penetration
-    const hasData = data && data.penetration_pct !== null && !isNaN(data.penetration_pct);
+    // Check if data exists and has valid EEI
+    const hasData = data && data.eei !== null && !isNaN(data.eei);
 
     if (hasData) {
-        const color = getPenetrationColorScale(data.penetration_pct);
+        const color = getEEIColor(data.eei);
         return {
             fillColor: color,
             weight: 1.5,
@@ -301,17 +308,48 @@ function getFeatureStyleFromMap(feature) {
 }
 
 /**
+ * Get color based on Enrollment Efficiency Index
+ * - EEI > 1.2 → Green (Over-performing)
+ * - 0.8 <= EEI <= 1.2 → Yellow (On track)
+ * - EEI < 0.8 → Red (Under-performing)
+ */
+function getEEIColor(eei) {
+    if (eei === null || eei === undefined || isNaN(eei)) return '#4B5563';
+
+    if (eei > 1.2) return '#22c55e'; // Green
+    if (eei >= 0.8) return '#eab308'; // Yellow
+    return '#ef4444'; // Red
+}
+
+/**
  * Bind tooltip and events using Map lookup
+ */
+/**
+ * Bind tooltip showing EEI details
  */
 function bindFeatureEventsFromMap(feature, layer) {
     const geoName = feature.properties.NAME_1 || feature.properties.name || feature.properties.ST_NM || '';
     const normalizedName = normalizeStateNameForLookup(geoName);
     const data = stateDataMap.get(normalizedName);
 
-    const hasData = data && data.penetration_pct !== null && !isNaN(data.penetration_pct);
+    const hasData = data && data.eei !== null && !isNaN(data.eei);
 
-    // DEBUG: Log each state lookup
-    console.log(`[DEBUG] State: "${geoName}" → Normalized: "${normalizedName}" → ${hasData ? 'JOIN OK' : 'JOIN FAILED'}`);
+    // Determine interpretation
+    let interpretation = '';
+    let interpColor = '';
+
+    if (hasData) {
+        if (data.eei > 1.2) {
+            interpretation = 'Over-performing';
+            interpColor = '#22c55e';
+        } else if (data.eei >= 0.8) {
+            interpretation = 'On track';
+            interpColor = '#eab308';
+        } else {
+            interpretation = 'Under-performing';
+            interpColor = '#ef4444';
+        }
+    }
 
     let tooltipContent;
 
@@ -319,21 +357,22 @@ function bindFeatureEventsFromMap(feature, layer) {
         tooltipContent = `
             <div class="map-tooltip">
                 <strong>${geoName}</strong><br/>
-                <span style="color: #22c55e; font-weight: bold;">✅ JOIN OK</span><br/>
-                <span style="font-size: 0.7rem; color: #888;">Lookup: "${normalizedName}"</span><br/>
-                <hr style="margin: 4px 0; border-color: #444;"/>
-                <span>Penetration: <b>${data.penetration_pct.toFixed(4)}%</b></span><br/>
-                <span>Enrollment: ${data.total_enrollment?.toLocaleString() || 0}</span><br/>
-                <span>Population: ${data.population?.toLocaleString() || 'N/A'}</span>
+                <span>EEI: <b style="color: ${interpColor}">${data.eei.toFixed(2)}</b></span><br/>
+                <span style="font-size: 0.85rem; color: ${interpColor}; margin-bottom: 6px; display: block;">${interpretation}</span>
+                <div style="border-top: 1px solid #444; margin: 4px 0;"></div>
+                <span>Actual: ${data.actual_enrollment?.toLocaleString() || 0}</span><br/>
+                <span>Expected: ${data.expected_enrollment?.toLocaleString() || 0}</span><br/>
+                <span style="font-size: 0.75rem; color: #888; margin-top: 4px; display: block; line-height: 1.2;">
+                    EEI compares enrollment activity vs expected based on population size.
+                </span>
             </div>
         `;
     } else {
         tooltipContent = `
             <div class="map-tooltip unavailable">
                 <strong>${geoName}</strong><br/>
-                <span style="color: #ef4444; font-weight: bold;">❌ JOIN FAILED</span><br/>
-                <span style="font-size: 0.7rem; color: #888;">Lookup: "${normalizedName}"</span><br/>
-                <span class="unavailable-msg">⚠️ Data unavailable</span>
+                <span class="unavailable-msg">⚠️ Data unavailable</span><br/>
+                <span style="font-size: 0.75rem; color: #888;">No population or enrollment data found.</span>
             </div>
         `;
     }
@@ -588,18 +627,21 @@ function addLegend() {
     legend.onAdd = function (map) {
         const div = L.DomUtil.create('div', 'map-legend');
         div.innerHTML = `
-            <h4>Penetration Rate</h4>
+            <h4>Enrollment Efficiency Index</h4>
+            <div class="legend-subtitle" style="font-size: 0.7rem; color: #aaa; margin-bottom: 8px; line-height: 1.2;">
+                Compares actual enrollment to expected <br>enrollment based on population share.
+            </div>
             <div class="legend-item">
                 <span class="legend-color" style="background: #22c55e;"></span>
-                <span>&gt; 90% (High)</span>
+                <span>&gt; 1.2 (Over-performing)</span>
             </div>
             <div class="legend-item">
                 <span class="legend-color" style="background: #eab308;"></span>
-                <span>70-90% (Medium)</span>
+                <span>0.8 - 1.2 (On track)</span>
             </div>
             <div class="legend-item">
                 <span class="legend-color" style="background: #ef4444;"></span>
-                <span>&lt; 70% (Low)</span>
+                <span>&lt; 0.8 (Under-performing)</span>
             </div>
             <div class="legend-item">
                 <span class="legend-color" style="background: #374151;"></span>
