@@ -25,19 +25,12 @@ from sklearn.preprocessing import StandardScaler
 import lightgbm as lgb
 import optuna
 from imblearn.over_sampling import SMOTE
-<<<<<<< HEAD
-import structlog
-
-from ..core.config import settings
-
-logger = structlog.get_logger()
-=======
 import logging
 
 from ..core.config import settings
 
 logger = logging.getLogger(__name__)
->>>>>>> origin/ridwan/gender-tracker-v2
+
 
 
 @dataclass
@@ -220,10 +213,7 @@ class GenderRiskModel:
         # Exclude target from features
         self.feature_names = [f for f in self.feature_names if f != target_column]
         
-        logger.info("Training model", 
-                   model_type=self.model_type,
-                   features=self.feature_names,
-                   n_samples=len(df))
+        logger.info(f"Training model type={self.model_type}, features={len(self.feature_names)}, n_samples={len(df)}")
         
         # Prepare features and target
         X = df[self.feature_names].values
@@ -246,16 +236,16 @@ class GenderRiskModel:
             try:
                 smote = SMOTE(random_state=settings.random_seed)
                 X_train_scaled, y_train = smote.fit_resample(X_train_scaled, y_train)
-                logger.info("Applied SMOTE", new_samples=len(y_train))
+                logger.info(f"Applied SMOTE, new_samples={len(y_train)}")
             except Exception as e:
-                logger.warning("SMOTE failed, using original data", error=str(e))
+                logger.warning(f"SMOTE failed, using original data: {e}")
         
         # Tune hyperparameters
         hyperparameters = {}
         if tune:
             logger.info("Tuning hyperparameters...")
             hyperparameters = self._tune_hyperparameters(X_train_scaled, y_train, n_trials=30)
-            logger.info("Best hyperparameters", params=hyperparameters)
+            logger.info(f"Best hyperparameters: {hyperparameters}")
         
         # Train final model
         self.model = self._create_model(hyperparameters)
@@ -330,7 +320,7 @@ class GenderRiskModel:
         missing_features = set(self.feature_names) - set(available_features)
         
         if missing_features:
-            logger.warning("Missing features, using zeros", missing=list(missing_features))
+            logger.warning(f"Missing features, using zeros: {list(missing_features)}")
             for f in missing_features:
                 df[f] = 0
         
@@ -363,7 +353,7 @@ class GenderRiskModel:
         }
         
         joblib.dump(model_data, path)
-        logger.info("Model saved", path=str(path))
+        logger.info(f"Model saved to {path}")
         
         return path
     

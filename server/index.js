@@ -18,10 +18,13 @@ import biometricRoutes from './routes/biometric.js';
 import dashboardRoutes from './routes/dashboard.js';
 import aiRoutes from './routes/ai.js';
 import hotspotsRoutes from './routes/hotspots.js';
+import genderRoutes from './routes/gender.js';
+import vulnerableRoutes from './routes/vulnerable.js';
+import simulateRoutes from './routes/simulate.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const ML_BACKEND_URL = process.env.ML_BACKEND_URL || 'http://localhost:8000';
+const ML_BACKEND_URL = process.env.ML_BACKEND_URL || 'http://localhost:8001';
 
 // Middleware
 app.use(cors());
@@ -45,6 +48,9 @@ app.use('/api/biometric', biometricRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/hotspots', hotspotsRoutes);
+app.use('/api/gender', genderRoutes);
+app.use('/api/vulnerable', vulnerableRoutes);
+app.use('/api/simulate', simulateRoutes);
 
 // Monitoring API Proxy - Forward to ML backend /api/monitor endpoints
 app.use('/api/monitor', async (req, res) => {
@@ -81,7 +87,9 @@ app.use('/api/monitor', async (req, res) => {
 // ML Backend Proxy - Forward requests to Python FastAPI ML backend
 app.use('/api/ml', async (req, res) => {
   try {
-    const targetUrl = `${ML_BACKEND_URL}${req.originalUrl}`;
+    // Strip /api/ml prefix from the URL before forwarding
+    const mlPath = req.originalUrl.replace('/api/ml', '');
+    const targetUrl = `${ML_BACKEND_URL}${mlPath}`;
     console.log(`🔀 Proxying to ML Backend: ${req.method} ${targetUrl}`);
 
     const response = await axios({
