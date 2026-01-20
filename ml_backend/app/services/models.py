@@ -22,9 +22,24 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import StandardScaler
 
-import lightgbm as lgb
-import optuna
-from imblearn.over_sampling import SMOTE
+try:
+    import lightgbm as lgb
+    HAS_LIGHTGBM = True
+except ImportError:
+    lgb = None
+    HAS_LIGHTGBM = False
+try:
+    import optuna
+    HAS_OPTUNA = True
+except ImportError:
+    optuna = None
+    HAS_OPTUNA = False
+try:
+    from imblearn.over_sampling import SMOTE
+    HAS_SMOTE = True
+except ImportError:
+    SMOTE = None
+    HAS_SMOTE = False
 import logging
 
 from ..core.config import settings
@@ -71,7 +86,7 @@ class GenderRiskModel:
         'age_18_plus',
     ]
     
-    def __init__(self, model_type: str = 'lightgbm'):
+    def __init__(self, model_type: str = 'randomforest' if not HAS_LIGHTGBM else 'lightgbm'):
         self.model_type = model_type
         self.model = None
         self.scaler = StandardScaler()
@@ -102,7 +117,7 @@ class GenderRiskModel:
         """Create a model instance based on model_type."""
         params = hyperparameters or {}
         
-        if self.model_type == 'lightgbm':
+        if self.model_type == 'lightgbm' and HAS_LIGHTGBM:
             default_params = {
                 'objective': 'binary',
                 'metric': 'auc',
@@ -232,7 +247,7 @@ class GenderRiskModel:
         X_test_scaled = self.scaler.transform(X_test)
         
         # Handle class imbalance with SMOTE
-        if use_smote and len(np.unique(y_train)) > 1:
+        if use_smote and HAS_SMOTE and len(np.unique(y_train)) > 1:
             try:
                 smote = SMOTE(random_state=settings.random_seed)
                 X_train_scaled, y_train = smote.fit_resample(X_train_scaled, y_train)
@@ -242,7 +257,7 @@ class GenderRiskModel:
         
         # Tune hyperparameters
         hyperparameters = {}
-        if tune:
+        if tune and HAS_OPTUNA:
             logger.info("Tuning hyperparameters...")
             hyperparameters = self._tune_hyperparameters(X_train_scaled, y_train, n_trials=30)
             logger.info(f"Best hyperparameters: {hyperparameters}")
