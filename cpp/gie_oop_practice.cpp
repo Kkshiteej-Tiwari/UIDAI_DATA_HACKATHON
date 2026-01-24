@@ -379,27 +379,14 @@ class SafeDivision {
 public:
     static double divide(double a, double b) {
         // TODO: Implement with exception handling
-        try {
-            if (b == 0) {
-                throw b;
-            }
-            else {
-                double result = a / b;
-                if (result > 1e308) {
-                    throw result;
-                }
-                return result;
-            }
+        if (b == 0) {
+            throw invalid_argument("Division by zero is not allowed!");
         }
-        catch (double val) {
-            if ( val == 0) {
-                cout << "Division by zero is not allowed!" << endl;
-            }
-            else {
-                cout << "Overflow error: Result is too large!" << endl;
-            }
+        double result = a / b;
+        if (result > 1e308) {
+            throw overflow_error("Overflow error: Result is too large!");
         }
-        return 0;
+        return result;
     }
 
     static int safeParse(const string& str) {
@@ -427,31 +414,41 @@ void testExceptions() {
     // Test 1: Division by zero
     try {
         // TODO: Call divide with divisor 0
-        SafeDivision::divide(10, 0);
-    } catch (/* TODO: catch appropriate exception */ ) {
+        double result = SafeDivision::divide(10, 0);
+        cout << "Result: " << result << endl;
+    } catch (invalid_argument& e) {
         // TODO: Print error message
-        
+        cout << "Caught exception: " << e.what() << endl;
     }
     
     // Test 2: Normal division
     try {
         // TODO: Call divide with valid inputs
+        double result = SafeDivision::divide(20, 5);
+        cout << "20 / 5 = " << result << endl;
     } catch (...) {
         // TODO: Handle any exception
+        cout << "Unexpected exception occurred!" << endl;
     }
     
     // Test 3: Parse valid integer
     try {
         // TODO: Parse "123"
+        int value = SafeDivision::safeParse("123");
+        cout << "Parsed value: " << value << endl;
     } catch (...) {
         // TODO: Handle exception
+        cout << "Failed to parse valid integer!" << endl;
     }
     
     // Test 4: Parse invalid integer
     try {
         // TODO: Parse "abc"
+        int value = SafeDivision::safeParse("abc");
+        cout << "Parsed value: " << value << endl;
     } catch (...) {
         // TODO: Handle exception
+        cout << "Failed to parse invalid integer!" << endl;
     }
 }
 
