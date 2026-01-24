@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UIDAI Data Hackathon - Final Project Report</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Times New Roman', Times, serif;
+            background-color: #FDFDFB;
+            color: #1a1a1a;
+            line-height: 1.6;
+            font-size: 12pt;
+        }
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 25mm 20mm;
+            background: #fff;
+            border: 1px solid #ccc;
+            margin-bottom: 10px;
+        }
+        .section-page {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            min-height: 250mm;
+        }
+        .section-page-inner {
+            border: 3px solid #138808;
+            padding: 40px 50px;
+            max-width: 85%;
+        }
+        .section-page-inner h1 {
+            font-size: 24pt;
+            color: #FF9933;
+            border-bottom: 2px solid #138808;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .section-page-inner h2 {
+            font-size: 14pt;
+            color: #000080;
+            margin-bottom: 25px;
+            font-weight: normal;
+        }
+        .section-page-inner p {
+            font-size: 11pt;
+            text-align: justify;
+            margin-bottom: 15px;
+        }
+        .accent-bar {
+            height: 6px;
+            background: linear-gradient(to right, #FF9933 33%, #FFFFFF 33%, #FFFFFF 66%, #138808 66%);
+            margin: 20px 0;
+        }
+        h2.section-title {
+            font-size: 16pt;
+            color: #000080;
+            border-bottom: 2px solid #FF9933;
+            padding-bottom: 8px;
+            margin: 25px 0 15px 0;
+        }
+        h3.subsection-title {
+            font-size: 13pt;
+            color: #138808;
+            margin: 20px 0 10px 0;
+            border-left: 4px solid #FF9933;
+            padding-left: 10px;
+        }
+        p { margin-bottom: 12px; text-align: justify; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 10pt;
+        }
+        table, th, td { border: 1px solid #666; }
+        th {
+            background-color: #FF9933;
+            color: #fff;
+            padding: 10px 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+        td { padding: 8px; vertical-align: top; }
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        .toc-container {
+            border: 2px solid #138808;
+            padding: 30px;
+            margin-top: 20px;
+        }
+        .toc-title {
+            font-size: 18pt;
+            color: #000080;
+            text-align: center;
+            border-bottom: 2px solid #FF9933;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .toc-list { list-style: none; }
+        .toc-list li {
+            padding: 8px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        .toc-list a {
+            text-decoration: none;
+            color: #000080;
+            font-size: 12pt;
+        }
+        .toc-list a:hover { color: #FF9933; }
+        .repo-box {
+            border: 3px solid #138808;
+            background-color: #f0fff0;
+            padding: 20px;
+            text-align: center;
+            margin-top: 30px;
+        }
+        .repo-box h3 { color: #000080; margin-bottom: 10px; }
+        .repo-box a { color: #138808; font-weight: bold; font-size: 11pt; }
+        hr.divider {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 20px 0;
+        }
+        ul, ol { margin-left: 25px; margin-bottom: 12px; }
+        li { margin-bottom: 6px; }
+        @media print {
+            .page { border: none; margin: 0; page-break-after: always; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- SECTION PAGE -->
+<div class="page section-page">
+    <div class="section-page-inner">
+        <h1>Integrated UIDAI Analytics &amp; Verification Platform</h1>
+        <div class="accent-bar"></div>
+        <h2>Aadhaar Kavach — Comprehensive Identity Solutions</h2>
+        <p>This document presents the Final Project Report for the UIDAI Data Hackathon submission. The platform, branded as <strong>Aadhaar Kavach</strong>, is a full-stack web application designed to enhance Aadhaar-related services through intelligent analytics, machine learning-driven forecasting, anomaly detection, and secure verification mechanisms.</p>
+        <p>The system integrates advanced data processing pipelines with a modern, responsive user interface to deliver actionable insights for enrollment optimization, fraud prevention, and operational efficiency across UIDAI infrastructure.</p>
+        <p><strong>Live Deployment:</strong> <a href="https://aadhar-kavach.vercel.app/" target="_blank">https://aadhar-kavach.vercel.app/</a></p>
+        <div class="accent-bar"></div>
+        <p><em>Submitted for UIDAI Data Hackathon 2026</em></p>
+    </div>
+</div>
+
+<!-- TABLE OF CONTENTS -->
+<div class="page">
+    <div class="toc-container">
+        <h2 class="toc-title">Table of Contents</h2>
+        <ul class="toc-list">
+            <li><a href="#introduction">1. Introduction</a></li>
+            <li><a href="#problem-statement">2. Problem Statement &amp; Motivation</a></li>
+            <li><a href="#system-overview">3. System Overview</a></li>
+            <li><a href="#core-features">4. Core Features</a></li>
+            <li><a href="#ml-models">5. Machine Learning Models Used</a></li>
+            <li><a href="#tech-stack">6. Technology Stack</a></li>
+            <li><a href="#utilities-tools">7. Utilities &amp; Tools Used</a></li>
+            <li><a href="#feature-access">8. Feature Access Guide</a></li>
+            <li><a href="#repository">9. Repository Reference</a></li>
+        </ul>
+    </div>
+</div>
+
+<!-- INTRODUCTION -->
+<div class="page">
+    <h2 class="section-title" id="introduction">1. Introduction</h2>
+    <p>The Unique Identification Authority of India (UIDAI) manages one of the world's largest biometric identity systems, serving over 1.4 billion residents. The scale and complexity of Aadhaar operations demand sophisticated technological solutions for enrollment management, fraud detection, data quality assurance, and operational optimization.</p>
+    <p><strong>Aadhaar Kavach</strong> is an integrated analytics and verification platform developed to address these operational challenges. The platform combines modern web technologies with machine learning capabilities to provide UIDAI administrators, enrollment operators, and stakeholders with comprehensive tools for data-driven decision making.</p>
+    <p>Key objectives of this platform include:</p>
+    <ul>
+        <li>Providing real-time analytics and forecasting for Aadhaar enrollment demand</li>
+        <li>Detecting anomalies and potential fraud patterns in enrollment data</li>
+        <li>Optimizing resource allocation across enrollment centers</li>
+        <li>Ensuring data quality through automated scoring mechanisms</li>
+        <li>Enabling secure verification and authentication services</li>
+        <li>Delivering actionable insights through interactive dashboards</li>
+    </ul>
+    <p>This report documents the complete technical implementation, feature specifications, and usage guidelines for the Aadhaar Kavach platform as submitted for the UIDAI Data Hackathon.</p>
+
+    <hr class="divider">
+
+    <h2 class="section-title" id="problem-statement">2. Problem Statement &amp; Motivation</h2>
+    <p>UIDAI faces several operational challenges in managing the Aadhaar ecosystem at scale:</p>
+    
+    <h3 class="subsection-title">2.1 Enrollment Demand Forecasting</h3>
+    <p>Predicting enrollment volumes across different regions and time periods is essential for resource planning. Without accurate forecasts, enrollment centers may experience understaffing during peak periods or inefficient resource utilization during low-demand periods.</p>
+
+    <h3 class="subsection-title">2.2 Fraud and Anomaly Detection</h3>
+    <p>The massive scale of Aadhaar enrollments creates opportunities for fraudulent activities including duplicate enrollments, identity theft, and operator misconduct. Traditional rule-based detection systems are insufficient for identifying sophisticated fraud patterns.</p>
+
+    <h3 class="subsection-title">2.3 Data Quality Assurance</h3>
+    <p>Maintaining high data quality across billions of records requires automated mechanisms for identifying and flagging potential errors, inconsistencies, and quality issues before they propagate through the system.</p>
+
+    <h3 class="subsection-title">2.4 Capacity Optimization</h3>
+    <p>Efficient allocation of enrollment infrastructure, personnel, and equipment across thousands of centers nationwide requires sophisticated optimization algorithms that consider multiple constraints and objectives.</p>
+
+    <h3 class="subsection-title">2.5 Operational Monitoring</h3>
+    <p>Real-time visibility into system health, enrollment progress, and operational metrics is critical for proactive management and rapid response to emerging issues.</p>
+
+    <p>The Aadhaar Kavach platform addresses these challenges through an integrated solution combining predictive analytics, machine learning models, and intuitive visualization tools.</p>
+</div>
+
+<!-- SYSTEM OVERVIEW -->
+<div class="page">
+    <h2 class="section-title" id="system-overview">3. System Overview</h2>
+    <p>Aadhaar Kavach is architected as a modern three-tier web application with distinct frontend, backend, and machine learning service layers. This separation enables independent scaling, maintenance, and deployment of each component.</p>
+
+    <h3 class="subsection-title">3.1 Architecture Components</h3>
+    <table>
+        <tr>
+            <th>Layer</th>
+            <th>Description</th>
+            <th>Key Responsibilities</th>
+        </tr>
+        <tr>
+            <td><strong>Frontend</strong></td>
+            <td>React-based SPA with Next.js</td>
+            <td>User interface, data visualization, user interactions, responsive design</td>
+        </tr>
+        <tr>
+            <td><strong>Backend API</strong></td>
+            <td>Express.js REST API Server</td>
+            <td>Business logic, data validation, API routing, authentication, proxy services</td>
+        </tr>
+        <tr>
+            <td><strong>ML Backend</strong></td>
+            <td>FastAPI Python Service</td>
+            <td>Model inference, predictions, anomaly detection, analytics computations</td>
+        </tr>
+        <tr>
+            <td><strong>Database</strong></td>
+            <td>MongoDB with Mongoose ODM</td>
+            <td>Data persistence, querying, indexing, aggregation pipelines</td>
+        </tr>
+    </table>
+
+    <h3 class="subsection-title">3.2 Data Flow</h3>
+    <p>The platform processes data through the following pipeline:</p>
+    <ol>
+        <li>User requests are received by the Next.js frontend and routed to appropriate API endpoints</li>
+        <li>The Express.js backend handles authentication, validation, and business logic</li>
+        <li>For ML-intensive operations, requests are proxied to the FastAPI ML backend</li>
+        <li>ML models process input data and return predictions/insights</li>
+        <li>Results are aggregated, formatted, and returned to the frontend for visualization</li>
+    </ol>
+
+    <h3 class="subsection-title">3.3 Deployment Architecture</h3>
+    <p>The application is deployed using modern cloud infrastructure:</p>
+    <ul>
+        <li><strong>Frontend:</strong> Vercel for serverless Next.js deployment with edge caching</li>
+        <li><strong>Backend:</strong> Containerized services with automatic scaling</li>
+        <li><strong>ML Services:</strong> Dedicated compute instances for model inference</li>
+    </ul>
+</div>
+
+<!-- CORE FEATURES -->
+<div class="page">
+    <h2 class="section-title" id="core-features">4. Core Features</h2>
+    <p>The platform provides ten integrated features designed to address specific operational requirements of UIDAI. Each feature is implemented as a modular component with dedicated ML models, APIs, and UI elements.</p>
+
+    <h3 class="subsection-title">4.1 Enrollment Demand Forecasting</h3>
+    <table>
+        <tr><th colspan="2">Enrollment Demand Forecasting</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Predict future Aadhaar enrollment volumes across regions and time periods to enable proactive resource planning and capacity management.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Time-series forecasting using historical enrollment data, seasonal pattern recognition, trend analysis, and confidence interval generation for predictions.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Users select region, date range, and granularity. The system displays interactive charts showing historical trends, predicted values, and confidence bands with downloadable reports.</td></tr>
+    </table>
+
+    <h3 class="subsection-title">4.2 Anomaly Detection System</h3>
+    <table>
+        <tr><th colspan="2">Anomaly Detection System</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Identify unusual patterns, outliers, and potential fraud indicators in enrollment data for proactive investigation and risk mitigation.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Statistical anomaly detection, clustering-based outlier identification, temporal pattern analysis, and multi-dimensional anomaly scoring.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Dashboard displays detected anomalies with severity scores, affected records, and recommended actions. Users can drill down into specific anomalies for detailed analysis.</td></tr>
+    </table>
+
+    <h3 class="subsection-title">4.3 Data Quality Scoring</h3>
+    <table>
+        <tr><th colspan="2">Data Quality Scoring</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Automatically assess and score the quality of enrollment records to maintain data integrity and identify records requiring manual review.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Multi-factor quality assessment including completeness, accuracy, consistency, and validity checks with composite scoring algorithms.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Quality dashboard shows aggregate scores by region, center, and operator. Low-quality records are flagged for review with specific improvement recommendations.</td></tr>
+    </table>
+
+    <h3 class="subsection-title">4.4 Capacity Optimization</h3>
+    <table>
+        <tr><th colspan="2">Capacity Optimization</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Optimize allocation of enrollment resources including personnel, equipment, and infrastructure to maximize throughput and minimize wait times.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Constraint-based optimization, demand-supply matching, workload balancing, and scenario simulation for different allocation strategies.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Users define constraints and objectives. The system generates optimal allocation recommendations with expected outcomes and comparison reports.</td></tr>
+    </table>
+</div>
+
+<!-- CORE FEATURES CONTINUED -->
+<div class="page">
+    <h3 class="subsection-title">4.5 Risk Scoring Engine</h3>
+    <table>
+        <tr><th colspan="2">Risk Scoring Engine</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Assess and quantify risk levels associated with enrollment records, operators, and centers to prioritize security measures and audits.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Multi-factor risk assessment using behavioral analysis, historical patterns, demographic indicators, and real-time transaction monitoring.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Risk dashboard displays hierarchical risk scores from individual records to regional aggregates. High-risk items are highlighted with recommended mitigation actions.</td></tr>
+    </table>
+
+    <h3 class="subsection-title">4.6 Pattern Classification</h3>
+    <table>
+        <tr><th colspan="2">Pattern Classification</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Classify enrollment patterns into predefined categories to identify trends, segment operations, and enable targeted interventions.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Supervised classification of enrollment patterns, feature extraction, category assignment, and pattern trend analysis over time.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Users view pattern distributions, category breakdowns, and temporal evolution. Custom classification rules can be defined for specific use cases.</td></tr>
+    </table>
+
+    <h3 class="subsection-title">4.7 Seasonal Analysis</h3>
+    <table>
+        <tr><th colspan="2">Seasonal Analysis</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Identify and analyze seasonal patterns in enrollment data to support planning for cyclical demand variations.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Time-series decomposition, seasonal component extraction, holiday/event impact analysis, and year-over-year comparison.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Interactive visualizations show seasonal components, peak periods, and comparative analysis. Users can customize analysis parameters.</td></tr>
+    </table>
+
+    <h3 class="subsection-title">4.8 Operator Performance Analytics</h3>
+    <table>
+        <tr><th colspan="2">Operator Performance Analytics</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Evaluate and benchmark enrollment operator performance to identify training needs, recognize top performers, and detect misconduct.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Performance metric calculation, peer comparison, trend analysis, quality-weighted scoring, and anomaly flagging for unusual behavior.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Operator leaderboards, individual performance cards, trend charts, and automated performance reports for supervisory review.</td></tr>
+    </table>
+
+    <h3 class="subsection-title">4.9 Geospatial Hotspot Detection</h3>
+    <table>
+        <tr><th colspan="2">Geospatial Hotspot Detection</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Identify geographic clusters of enrollment activity, underserved areas, and spatial patterns to optimize center placement.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Spatial clustering, density analysis, coverage gap identification, and location-based demand forecasting.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Interactive map interface showing hotspots, coverage areas, and recommended intervention zones with filtering by metrics.</td></tr>
+    </table>
+
+    <h3 class="subsection-title">4.10 Operations Monitoring Dashboard</h3>
+    <table>
+        <tr><th colspan="2">Operations Monitoring Dashboard</th></tr>
+        <tr><td><strong>Purpose</strong></td><td>Provide real-time operational visibility through comprehensive dashboards integrating key metrics across all system components.</td></tr>
+        <tr><td><strong>Key Functionality</strong></td><td>Real-time data aggregation, KPI visualization, alert generation, trend monitoring, and executive summary reporting.</td></tr>
+        <tr><td><strong>User Interaction</strong></td><td>Customizable dashboard layouts, drill-down capabilities, configurable alerts, and scheduled report generation.</td></tr>
+    </table>
+</div>
+
+<!-- ML MODELS -->
+<div class="page">
+    <h2 class="section-title" id="ml-models">5. Machine Learning Models Used</h2>
+    <p>The platform employs multiple machine learning models, each selected based on specific requirements for accuracy, interpretability, and computational efficiency.</p>
+
+    <table>
+        <tr>
+            <th>Model Name</th>
+            <th>Purpose</th>
+            <th>Input Data</th>
+            <th>Output</th>
+            <th>Reason for Selection</th>
+        </tr>
+        <tr>
+            <td>Prophet</td>
+            <td>Enrollment demand forecasting</td>
+            <td>Historical enrollment time series, holiday calendar</td>
+            <td>Point forecasts with confidence intervals</td>
+            <td>Handles seasonality, missing data, and outliers automatically; interpretable components</td>
+        </tr>
+        <tr>
+            <td>Isolation Forest</td>
+            <td>Anomaly detection</td>
+            <td>Multi-dimensional enrollment features</td>
+            <td>Anomaly scores and binary classifications</td>
+            <td>Effective for high-dimensional data; unsupervised; fast inference</td>
+        </tr>
+        <tr>
+            <td>XGBoost Classifier</td>
+            <td>Risk scoring and classification</td>
+            <td>Transaction and demographic features</td>
+            <td>Risk probability scores</td>
+            <td>High accuracy; handles mixed feature types; feature importance analysis</td>
+        </tr>
+        <tr>
+            <td>K-Means Clustering</td>
+            <td>Pattern clustering and segmentation</td>
+            <td>Behavioral and operational metrics</td>
+            <td>Cluster assignments and centroids</td>
+            <td>Scalable; interpretable clusters; efficient for large datasets</td>
+        </tr>
+        <tr>
+            <td>Random Forest</td>
+            <td>Quality scoring and feature importance</td>
+            <td>Record attributes and metadata</td>
+            <td>Quality scores with contributing factors</td>
+            <td>Robust to noise; provides feature importance; handles non-linear relationships</td>
+        </tr>
+        <tr>
+            <td>DBSCAN</td>
+            <td>Geospatial hotspot detection</td>
+            <td>Latitude, longitude, enrollment density</td>
+            <td>Spatial clusters and outlier points</td>
+            <td>Discovers arbitrary shaped clusters; identifies noise points; no predefined cluster count</td>
+        </tr>
+        <tr>
+            <td>Linear Programming (CVXPY)</td>
+            <td>Capacity optimization</td>
+            <td>Resource constraints, demand forecasts</td>
+            <td>Optimal resource allocation plans</td>
+            <td>Guaranteed optimal solutions for linear objectives; handles complex constraints</td>
+        </tr>
+        <tr>
+            <td>STL Decomposition</td>
+            <td>Seasonal pattern analysis</td>
+            <td>Time series enrollment data</td>
+            <td>Trend, seasonal, and residual components</td>
+            <td>Robust decomposition; handles irregular seasonality; statistical foundation</td>
+        </tr>
+    </table>
+
+    <hr class="divider">
+
+    <h2 class="section-title" id="tech-stack">6. Technology Stack</h2>
+    <table>
+        <tr>
+            <th>Layer</th>
+            <th>Technology</th>
+            <th>Purpose</th>
+        </tr>
+        <tr>
+            <td>Frontend</td>
+            <td>Next.js 14</td>
+            <td>React framework with SSR, routing, and optimization features</td>
+        </tr>
+        <tr>
+            <td>Frontend</td>
+            <td>React 18</td>
+            <td>Component-based UI library with hooks and concurrent features</td>
+        </tr>
+        <tr>
+            <td>Frontend</td>
+            <td>TypeScript</td>
+            <td>Type-safe JavaScript for improved developer experience</td>
+        </tr>
+        <tr>
+            <td>Frontend</td>
+            <td>Tailwind CSS</td>
+            <td>Utility-first CSS framework for rapid UI development</td>
+        </tr>
+        <tr>
+            <td>Frontend</td>
+            <td>Recharts / Chart.js</td>
+            <td>Data visualization libraries for interactive charts</td>
+        </tr>
+        <tr>
+            <td>Backend</td>
+            <td>Express.js</td>
+            <td>Node.js web framework for REST API development</td>
+        </tr>
+        <tr>
+            <td>Backend</td>
+            <td>Node.js 18+</td>
+            <td>JavaScript runtime for server-side execution</td>
+        </tr>
+        <tr>
+            <td>ML Backend</td>
+            <td>FastAPI</td>
+            <td>High-performance Python web framework for ML APIs</td>
+        </tr>
+        <tr>
+            <td>ML Backend</td>
+            <td>Python 3.10+</td>
+            <td>Primary language for ML model development</td>
+        </tr>
+        <tr>
+            <td>ML Backend</td>
+            <td>scikit-learn</td>
+            <td>Machine learning library for classical algorithms</td>
+        </tr>
+        <tr>
+            <td>ML Backend</td>
+            <td>Pandas / NumPy</td>
+            <td>Data manipulation and numerical computing</td>
+        </tr>
+        <tr>
+            <td>Database</td>
+            <td>MongoDB</td>
+            <td>NoSQL document database for flexible schema storage</td>
+        </tr>
+        <tr>
+            <td>Deployment</td>
+            <td>Vercel</td>
+            <td>Frontend hosting with edge network and auto-scaling</td>
+        </tr>
+        <tr>
+            <td>Deployment</td>
+            <td>Docker</td>
+            <td>Containerization for consistent deployment environments</td>
+        </tr>
+    </table>
+</div>
+
+<!-- UTILITIES & TOOLS -->
+<div class="page">
+    <h2 class="section-title" id="utilities-tools">7. Utilities &amp; Tools Used</h2>
+    <table>
+        <tr>
+            <th>Tool / Library</th>
+            <th>Category</th>
+            <th>Purpose</th>
+        </tr>
+        <tr><td>ESLint</td><td>Code Quality</td><td>JavaScript/TypeScript linting and code style enforcement</td></tr>
+        <tr><td>Prettier</td><td>Code Quality</td><td>Code formatting for consistent style across codebase</td></tr>
+        <tr><td>Git</td><td>Version Control</td><td>Source code version control and collaboration</td></tr>
+        <tr><td>GitHub Actions</td><td>CI/CD</td><td>Automated testing, building, and deployment pipelines</td></tr>
+        <tr><td>Axios</td><td>HTTP Client</td><td>Promise-based HTTP client for API requests</td></tr>
+        <tr><td>Mongoose</td><td>ODM</td><td>MongoDB object modeling for Node.js</td></tr>
+        <tr><td>Pydantic</td><td>Validation</td><td>Data validation and settings management for Python</td></tr>
+        <tr><td>Uvicorn</td><td>Server</td><td>ASGI server for FastAPI application deployment</td></tr>
+        <tr><td>Leaflet</td><td>Mapping</td><td>Interactive map library for geospatial visualizations</td></tr>
+        <tr><td>date-fns</td><td>Utility</td><td>Modern JavaScript date utility library</td></tr>
+        <tr><td>Zustand</td><td>State Management</td><td>Lightweight state management for React applications</td></tr>
+        <tr><td>React Query</td><td>Data Fetching</td><td>Server state management and caching</td></tr>
+        <tr><td>Joblib</td><td>ML Utility</td><td>Model serialization and parallel computing</td></tr>
+        <tr><td>Matplotlib</td><td>Visualization</td><td>Python plotting library for model analysis</td></tr>
+    </table>
+
+    <hr class="divider">
+
+    <h2 class="section-title" id="feature-access">8. Feature Access Guide</h2>
+    <p>This section provides detailed navigation paths for accessing each feature within the Aadhaar Kavach platform.</p>
+
+    <h3 class="subsection-title">8.1 Enrollment Demand Forecasting</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>Navigate to the main dashboard at <code>https://aadhar-kavach.vercel.app/</code></td></tr>
+        <tr><td>2</td><td>Click on "Analytics" in the main navigation menu</td></tr>
+        <tr><td>3</td><td>Select "Enrollment Forecast" from the dropdown</td></tr>
+        <tr><td>4</td><td>Choose region filters and date range using the control panel</td></tr>
+        <tr><td>5</td><td>Click "Generate Forecast" to view predictions</td></tr>
+    </table>
+
+    <h3 class="subsection-title">8.2 Anomaly Detection</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>From the dashboard, navigate to "Security" section</td></tr>
+        <tr><td>2</td><td>Select "Anomaly Detection" module</td></tr>
+        <tr><td>3</td><td>Configure detection sensitivity using the slider</td></tr>
+        <tr><td>4</td><td>Review detected anomalies in the results table</td></tr>
+        <tr><td>5</td><td>Click on individual anomalies for detailed investigation view</td></tr>
+    </table>
+
+    <h3 class="subsection-title">8.3 Data Quality Scoring</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>Access "Quality Management" from the main menu</td></tr>
+        <tr><td>2</td><td>Select "Quality Scores" dashboard</td></tr>
+        <tr><td>3</td><td>Use filters to narrow down by region, center, or operator</td></tr>
+        <tr><td>4</td><td>View aggregate scores and drill down to individual records</td></tr>
+    </table>
+
+    <h3 class="subsection-title">8.4 Capacity Optimization</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>Navigate to "Operations" → "Capacity Planning"</td></tr>
+        <tr><td>2</td><td>Define optimization constraints in the configuration panel</td></tr>
+        <tr><td>3</td><td>Set objectives (maximize throughput, minimize wait time, etc.)</td></tr>
+        <tr><td>4</td><td>Click "Optimize" to generate recommendations</td></tr>
+        <tr><td>5</td><td>Export results or apply suggested allocations</td></tr>
+    </table>
+</div>
+
+<!-- FEATURE ACCESS GUIDE CONTINUED -->
+<div class="page">
+    <h3 class="subsection-title">8.5 Risk Scoring</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>Access "Security" → "Risk Analysis" from navigation</td></tr>
+        <tr><td>2</td><td>View risk distribution heat map on the dashboard</td></tr>
+        <tr><td>3</td><td>Filter by risk level (High, Medium, Low)</td></tr>
+        <tr><td>4</td><td>Select individual items to view risk factor breakdown</td></tr>
+    </table>
+
+    <h3 class="subsection-title">8.6 Pattern Classification</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>Navigate to "Analytics" → "Pattern Analysis"</td></tr>
+        <tr><td>2</td><td>Select classification type from available options</td></tr>
+        <tr><td>3</td><td>View pattern distribution charts and category breakdown</td></tr>
+        <tr><td>4</td><td>Export classification results for external analysis</td></tr>
+    </table>
+
+    <h3 class="subsection-title">8.7 Seasonal Analysis</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>Go to "Analytics" → "Seasonal Trends"</td></tr>
+        <tr><td>2</td><td>Select time period and region for analysis</td></tr>
+        <tr><td>3</td><td>View decomposed components: trend, seasonal, residual</td></tr>
+        <tr><td>4</td><td>Compare patterns across different years using toggle</td></tr>
+    </table>
+
+    <h3 class="subsection-title">8.8 Operator Performance</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>Access "Operations" → "Operator Analytics"</td></tr>
+        <tr><td>2</td><td>View leaderboard with top performers highlighted</td></tr>
+        <tr><td>3</td><td>Search for specific operators using the search bar</td></tr>
+        <tr><td>4</td><td>Click on operator name to view detailed performance card</td></tr>
+        <tr><td>5</td><td>Generate performance reports for supervisor review</td></tr>
+    </table>
+
+    <h3 class="subsection-title">8.9 Geospatial Hotspot Detection</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>Navigate to "Maps" → "Hotspot Analysis"</td></tr>
+        <tr><td>2</td><td>Interact with the map using zoom and pan controls</td></tr>
+        <tr><td>3</td><td>Toggle hotspot overlay layers</td></tr>
+        <tr><td>4</td><td>Click on hotspot clusters for detailed statistics</td></tr>
+        <tr><td>5</td><td>Use filters to view specific enrollment metrics</td></tr>
+    </table>
+
+    <h3 class="subsection-title">8.10 Operations Monitoring Dashboard</h3>
+    <table>
+        <tr><th>Step</th><th>Action</th></tr>
+        <tr><td>1</td><td>The main dashboard at <code>/</code> serves as the operations monitoring hub</td></tr>
+        <tr><td>2</td><td>Customize widget layout using the configuration icon</td></tr>
+        <tr><td>3</td><td>Set up alerts by clicking "Configure Alerts"</td></tr>
+        <tr><td>4</td><td>Use the refresh button or enable auto-refresh for real-time data</td></tr>
+        <tr><td>5</td><td>Export dashboard views as PDF or image</td></tr>
+    </table>
+</div>
+
+<!-- REPOSITORY REFERENCE -->
+<div class="page">
+    <h2 class="section-title" id="repository">9. Repository Reference</h2>
+    <p>The complete source code for the Aadhaar Kavach platform is available in a public GitHub repository. The repository contains all frontend, backend, and ML components along with documentation and deployment configurations.</p>
+
+    <div class="repo-box">
+        <h3>GitHub Repository</h3>
+        <p style="margin: 15px 0;"><a href="https://github.com/Kkshiteej-Tiwari/UIDAI_DATA_HACKATHON" target="_blank">https://github.com/Kkshiteej-Tiwari/UIDAI_DATA_HACKATHON</a></p>
+        <div class="accent-bar"></div>
+        <p style="margin-top: 15px;"><strong>Live Application:</strong></p>
+        <p><a href="https://aadhar-kavach.vercel.app/" target="_blank">https://aadhar-kavach.vercel.app/</a></p>
+    </div>
+
+    <hr class="divider">
+
+    <p style="text-align: center; margin-top: 40px; color: #666; font-style: italic;">
+        — End of Report —
+    </p>
+
+    <div class="accent-bar" style="margin-top: 30px;"></div>
+
+    <p style="text-align: center; font-size: 10pt; color: #888; margin-top: 20px;">
+        Submitted for UIDAI Data Hackathon 2026<br>
+        Aadhaar Kavach — Integrated UIDAI Analytics &amp; Verification Platform
+    </p>
+</div>
+
+</body>
+</html>
