@@ -27,6 +27,12 @@ venv/
 .pytest_cache/
 .mypy_cache/
 
+# C++ compiled binaries
+cpp/gie_oop_practice
+*.o
+*.out
+*.exe
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
